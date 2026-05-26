@@ -1,0 +1,70 @@
+/* src/app/page.module.css */
+.mainWrapper {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8fafc;
+  overflow: hidden;
+  padding: 20px;
+}
+
+/* Les effets dyal ddawez f l'arrière plan (Animated Glows) */
+.glow1, .glow2, .glow3 {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: 0;
+  animation: float 10s infinite ease-in-out alternate;
+}
+
+.glow1 {
+  width: 400px;
+  height: 400px;
+  background: rgba(59, 130, 246, 0.15); /* Bleu */
+  top: -10%;
+  left: -10%;
+}
+
+.glow2 {
+  width: 500px;
+  height: 500px;
+  background: rgba(239, 68, 68, 0.1); /* Rouge */
+  bottom: -20%;
+  right: -10%;
+  animation-delay: -5s;
+}
+
+.glow3 {
+  width: 300px;
+  height: 300px;
+  background: rgba(16, 185, 129, 0.1); /* Vert */
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation-duration: 15s;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+@keyframes float {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(30px, 50px) scale(1.1); }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .mainWrapper {
+    background-color: #020617;
+  }
+  .glow1 { background: rgba(59, 130, 246, 0.2); }
+  .glow2 { background: rgba(239, 68, 68, 0.15); }
+  .glow3 { background: rgba(16, 185, 129, 0.15); }
+}

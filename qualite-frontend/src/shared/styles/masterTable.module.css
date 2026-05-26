@@ -1,0 +1,117 @@
+/* src/shared/styles/masterTable.module.css */
+
+.tableContainer {
+  width: 100%;
+  margin-top: 20px;
+  animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+.glassWrapper {
+  width: 100%;
+  overflow-x: auto;
+  /* Design N9i: Byed m3a chwiya dyal blur w d'heb */
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 24px;
+  box-shadow: 
+    0 20px 40px rgba(10, 17, 40, 0.06),
+    inset 0 0 0 1px rgba(255, 255, 255, 1);
+  padding: 6px;
+}
+
+/* Scrollbar VIP */
+.glassWrapper::-webkit-scrollbar { height: 10px; }
+.glassWrapper::-webkit-scrollbar-track { background: rgba(241, 245, 249, 0.5); border-radius: 0 0 20px 20px; }
+.glassWrapper::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.4); border-radius: 10px; }
+.glassWrapper::-webkit-scrollbar-thumb:hover { background: rgba(212, 175, 55, 0.8); }
+
+.masterTable {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: #0F172A;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.masterTable th, .masterTable td {
+  padding: 14px 18px;
+  text-align: center;
+  border-right: 1px solid rgba(226, 232, 240, 0.6);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+  white-space: nowrap;
+}
+
+/* Headers Design */
+.masterTable thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* Ligne 1: Les grands titres (SACLI, SARCLI...) */
+.masterTable thead tr:nth-child(1) th {
+  background: rgba(255, 255, 255, 0.95);
+  color: #0A1128;
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-bottom: 2px solid #D4AF37; /* Kht d'heb lte7t */
+}
+
+/* Ligne 2 & 3: Sous-titres (PLP, HOTLINE, Groupes...) */
+.masterTable thead tr:nth-child(2) th,
+.masterTable thead tr:nth-child(3) th {
+  background: rgba(248, 250, 252, 0.85);
+  color: #1D4ED8; /* Royal Blue */
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+/* Ligne 4: Colonnes finales (NUM, DENUM...) */
+.masterTable thead tr:nth-child(4) th {
+  background: rgba(255, 255, 255, 0.7);
+  color: #64748B;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+/* Body Rows Hover Effect */
+.masterTable tbody tr {
+  transition: background-color 0.3s ease;
+}
+
+.masterTable tbody tr:hover {
+  background-color: rgba(212, 175, 55, 0.05); /* Hover b d'heb khfif */
+}
+
+.masterTable td {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1E293B;
+}
+
+/* Glowing Results (Zre9 Royal) */
+.resCol {
+  color: #1D4ED8 !important; /* Royal Blue */
+  font-weight: 800 !important;
+  background: rgba(29, 78, 216, 0.03);
+}
+
+.bonusCol { color: #10B981 !important; } /* Green */
+.pmarCol { color: #EF4444 !important; } /* Red */
+
+/* Separators (Khtouta d'heb bin les modules) */
+.borderLeft { 
+  border-left: 2px solid rgba(212, 175, 55, 0.4) !important; 
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
