@@ -240,13 +240,18 @@ export default function InteractiveBackground() {
         const cy = posArray[i3+1];
         const cz = posArray[i3+2];
 
-        // Mouvement 3chwa2i (Floating wave effect)
-        const waveX = Math.sin(time * 0.5 + ty) * 0.2;
-        const waveY = Math.cos(time * 0.3 + tx) * 0.2;
+        // L'FIX HNA: Jbedna l'positions d'origine lwla
+        const origX = targetPositions[i3];
+        const origY = targetPositions[i3+1];
+        const tz = targetPositions[i3+2]; // Z makaytbdelch bl wave fhad l'cas
 
-        const tx = targetPositions[i3] + waveX;
-        const ty = targetPositions[i3+1] + waveY;
-        const tz = targetPositions[i3+2];
+        // Mouvement 3chwa2i (Floating wave effect) m-bassi 3la l'origine
+        const waveX = Math.sin(time * 0.5 + origY) * 0.2;
+        const waveY = Math.cos(time * 0.3 + origX) * 0.2;
+
+        // 3ad darna affectation
+        const tx = origX + waveX;
+        const ty = origY + waveY;
 
         const dx = cx - mouse3D.x;
         const dy = cy - mouse3D.y;

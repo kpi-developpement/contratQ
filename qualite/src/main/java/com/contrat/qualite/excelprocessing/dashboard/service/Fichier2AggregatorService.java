@@ -11,27 +11,25 @@ import com.contrat.qualite.excelprocessing.constructionrang1.dto.ConstructionGro
 import com.contrat.qualite.excelprocessing.perfrang2.dto.PerfRang2ResultDto;
 import com.contrat.qualite.excelprocessing.perfrang2.dto.PerfRang2GroupDto;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 @Slf4j
 @Service
 public class Fichier2AggregatorService {
 
-    // L'noms mkhltin, nqelbou 3lihom b contains/ignoreCase
-    private static final String COL_TNH = "motf_ko_cr_inst_first_crinstall_mnt";
-    private static final String COL_ZONE = "zone_statut prise";
-    private static final String COL_RANG = "rang_rdv (copie)";
-    private static final String COL_STATUT = "grp_statut_crinstall_mnt";
-
     public Fichier2ResponseDto processFichier2(MultipartFile file) {
         // TNH
         long tnhNum = 0, tnhDenum = 0;
-        // Perf Rang 1
+        // Perf Rang 1 (PLP)
         long p1NumA = 0, p1DenA = 0, p1NumB = 0, p1DenB = 0, p1NumC = 0, p1DenC = 0;
         // Hotline Rang 1
         long hNumA = 0, hDenA = 0, hNumB = 0, hDenB = 0, hNumC = 0, hDenC = 0;
@@ -40,84 +38,97 @@ public class Fichier2AggregatorService {
         // Perf Rang 2
         long p2NumA = 0, p2DenA = 0, p2NumB = 0, p2DenB = 0, p2NumC = 0, p2DenC = 0;
 
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
-            String headerLine = br.readLine();
-            if (headerLine == null) throw new RuntimeException("Fichier 2 khawi");
+        // Kheddamna b Commons CSV kima derti f l'anciens services dyalek
+        CSVFormat format = CSVFormat.Builder.create()
+                .setDelimiter(';')
+                .setHeader()
+                .setSkipHeaderRecord(true)
+                .setIgnoreHeaderCase(true)
+                .setTrim(true)
+                .build();
 
-            String[] headers = headerLine.split(";", -1);
-            int idxTnh = -1, idxZone = -1, idxRang = -1, idxStatut = -1;
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
+             CSVParser parser = new CSVParser(br, format)) {
 
-            for (int i = 0; i < headers.length; i++) {
-                String h = headers[i].trim().toLowerCase().replace("\"", "");
-                if (h.contains(COL_TNH)) idxTnh = i;
-                else if (h.contains(COL_ZONE)) idxZone = i;
-                else if (h.contains("rang_rdv") && h.contains("(copie)")) idxRang = i;
-                else if (h.contains(COL_STATUT)) idxStatut = i;
+            Map<String, Integer> headerMap = parser.getHeaderMap();
+            String actualZoneCol = null, actualRangCol = null, actualStatutCol = null, actualMotifCol = null;
+
+            // Fuzzy Match l'headers bach ntfadaw mochkil dyal majuscule/minuscule awla espaces
+            for (String header : headerMap.keySet()) {
+                String cleanHeader = header.trim().toLowerCase();
+                if (cleanHeader.contains("zone_statut prise")) actualZoneCol = header;
+                else if (cleanHeader.contains("rang_rdv") && cleanHeader.contains("(copie)")) actualRangCol = header;
+                else if (cleanHeader.contains("grp_statut_crinstall_mnt")) actualStatutCol = header;
+                else if (cleanHeader.contains("motf_ko") || cleanHeader.contains("motif_ko")) actualMotifCol = header;
             }
 
-            if (idxTnh == -1 || idxZone == -1 || idxRang == -1 || idxStatut == -1) {
-                throw new RuntimeException("Naqsin des colonnes f Fichier 2. Verifier: ZONE, RANG, STATUT awla MOTIF_KO");
-            }
-
-            String line;
-            while ((line = br.readLine()) != null) {
-                String[] cols = line.split(";", -1);
-
-                // 1. Logique TNH (khassha t-tchecka wkha ykoun array sghir ila kano l'columns mt9arbin)
-                if (cols.length > idxTnh) {
-                    String tnhVal = cols[idxTnh].trim().replace("\"", "");
-                    if (!tnhVal.isEmpty()) {
-                        tnhDenum++;
-                        if ("CR DELAI - Organisation installateur".equalsIgnoreCase(tnhVal)) {
-                            tnhNum++;
-                        }
+            for (CSVRecord record : parser) {
+                // ==========================================
+                // 1. LOGIQUE TNH (CR Delai)
+                // ==========================================
+                tnhDenum++; // F TnhService knti kat7seb ga3 les lignes dima
+                if (actualMotifCol != null && record.isMapped(actualMotifCol)) {
+                    String motifValue = record.get(actualMotifCol);
+                    if (motifValue != null && "CR DELAI - Organisation installateur".equalsIgnoreCase(motifValue.trim())) {
+                        tnhNum++;
                     }
                 }
 
-                // 2. Logique les KPIs lokhrin (Zone, Rang, Statut)
-                if (cols.length > Math.max(idxZone, Math.max(idxRang, idxStatut))) {
-                    String rawZone = cols[idxZone].trim().replace("\"", "");
-                    String rawRang = cols[idxRang].trim().replace("\"", "");
-                    String rawStatut = cols[idxStatut].trim().replace("\"", "");
+                // ==========================================
+                // 2. LOGIQUE KPIs RANG 1 W RANG 2
+                // ==========================================
+                if (actualRangCol != null && actualZoneCol != null && actualStatutCol != null
+                        && record.isMapped(actualRangCol) && record.isMapped(actualZoneCol) && record.isMapped(actualStatutCol)) {
 
-                    String zone = rawZone.toUpperCase().replaceAll("[\\n\\r]+", " ").replaceAll("\\s+", " ").trim();
-                    String statut = rawStatut.toUpperCase().trim();
-                    boolean isCrOk = "CR_MNT_OK".equals(statut);
+                    String rawRang = record.get(actualRangCol);
+                    String rawZone = record.get(actualZoneCol);
+                    String rawStatut = record.get(actualStatutCol);
 
-                    boolean isRang1 = rawRang.equals("1") || rawRang.equals("1.0") || rawRang.equals("1,0");
-                    boolean isRangNot1 = !rawRang.isEmpty() && !isRang1;
+                    String rang = rawRang != null ? rawRang.trim() : "";
+                    // Nfs l'cleanup d l'espaces li knti dayer
+                    String zone = rawZone != null ? rawZone.toUpperCase().replaceAll("[\\n\\r]+", " ").replaceAll("\\s+", " ").trim() : "";
+                    String statut = rawStatut != null ? rawStatut.toUpperCase().trim() : "";
 
-                    // PERF RANG 1 (PLP)
-                    if (isRang1 && zone.startsWith("PLP ZONE")) {
-                        if (zone.contains("ZONE A")) { p1DenA++; if (isCrOk) p1NumA++; }
-                        else if (zone.contains("ZONE B")) { p1DenB++; if (isCrOk) p1NumB++; }
-                        else if (zone.contains("ZONE C")) { p1DenC++; if (isCrOk) p1NumC++; }
+                    boolean isRang1 = rang.equals("1") || rang.equals("1.0") || rang.equals("1,0");
+                    boolean isCrOk = statut.equals("CR_MNT_OK");
+
+                    // ---------- PLP RANG 1 ----------
+                    if (isRang1) {
+                        if (zone.equals("PLP ZONE A")) { p1DenA++; if(isCrOk) p1NumA++; }
+                        if (zone.equals("PLP ZONE B")) { p1DenB++; if(isCrOk) p1NumB++; }
+                        if (zone.equals("PLP ZONE C")) { p1DenC++; if(isCrOk) p1NumC++; }
                     }
-                    // HOTLINE RANG 1
-                    else if (isRang1 && zone.startsWith("HOTLINE ZONE")) {
-                        if (zone.contains("ZONE A")) { hDenA++; if (isCrOk) hNumA++; }
-                        else if (zone.contains("ZONE B")) { hDenB++; if (isCrOk) hNumB++; }
-                        else if (zone.contains("ZONE C")) { hDenC++; if (isCrOk) hNumC++; }
+
+                    // ---------- HOTLINE RANG 1 ----------
+                    if (isRang1) {
+                        if (zone.equals("HOTLINE ZONE A")) { hDenA++; if(isCrOk) hNumA++; }
+                        if (zone.equals("HOTLINE ZONE B")) { hDenB++; if(isCrOk) hNumB++; }
+                        if (zone.equals("HOTLINE ZONE C")) { hDenC++; if(isCrOk) hNumC++; }
                     }
-                    // CONSTRUCTION RANG 1
-                    else if (isRang1 && zone.startsWith("CONSTRUCTION ZONE")) {
-                        if (zone.contains("ZONE A")) { cDenA++; if (isCrOk) cNumA++; }
-                        else if (zone.contains("ZONE B")) { cDenB++; if (isCrOk) cNumB++; }
-                        else if (zone.contains("ZONE C")) { cDenC++; if (isCrOk) cNumC++; }
+
+                    // ---------- CONSTRUCTION RANG 1 ----------
+                    if (isRang1) {
+                        if (zone.equals("CONSTRUCTION ZONE A")) { cDenA++; if(isCrOk) cNumA++; }
+                        if (zone.equals("CONSTRUCTION ZONE B")) { cDenB++; if(isCrOk) cNumB++; }
+                        if (zone.equals("CONSTRUCTION ZONE C")) { cDenC++; if(isCrOk) cNumC++; }
                     }
-                    // PERF RANG 2 (Ga3 les zones machi 1)
+
+                    // ---------- PERF RANG 2 ----------
+                    boolean isRangNot1 = !rang.isEmpty() && !isRang1;
                     if (isRangNot1) {
-                        if (zone.contains("ZONE A")) { p2DenA++; if (isCrOk) p2NumA++; }
-                        else if (zone.contains("ZONE B")) { p2DenB++; if (isCrOk) p2NumB++; }
-                        else if (zone.contains("ZONE C")) { p2DenC++; if (isCrOk) p2NumC++; }
+                        // F PerfRang2Service knti dayer contains machi equals
+                        if (zone.contains("ZONE A")) { p2DenA++; if(isCrOk) p2NumA++; }
+                        if (zone.contains("ZONE B")) { p2DenB++; if(isCrOk) p2NumB++; }
+                        if (zone.contains("ZONE C")) { p2DenC++; if(isCrOk) p2NumC++; }
                     }
                 }
             }
         } catch (Exception e) {
-            log.error("Erreur f l'analyse dyal Fichier 2", e);
-            throw new RuntimeException("L'fichier 2 fih mochkil awla format mbedel.");
+            log.error("Erreur f l'analyse dyal Fichier 2 b Commons CSV", e);
+            throw new RuntimeException("Erreur f l'analyse: " + e.getMessage());
         }
 
+        // L'Mapping dyal les Resultats kaymchi direct l'DTO li kaytsnnah l'Frontend
         return Fichier2ResponseDto.builder()
                 .tnh(new TnhResultDto(tnhNum, tnhDenum, calc(tnhNum, tnhDenum)))
                 .perfRang1(new PerfRang1ResultDto(
