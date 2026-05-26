@@ -2,7 +2,7 @@ export const uploadTnhExcel = async (file) => {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch("http://localhost:7623/api/v1/excel/tnh/analyze", {
+  const response = await fetch(process.env.NEXT_PUBLIC_API_URL + " /api/v1/excel/tnh/analyze", {
     method: "POST",
     body: formData,
   });

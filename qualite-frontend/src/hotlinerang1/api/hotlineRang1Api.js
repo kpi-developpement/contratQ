@@ -2,7 +2,7 @@ export const uploadHotlineRang1Excel = async (file) => {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch("http://localhost:7623/api/v1/excel/hotlinerang1/analyze", {
+  const response = await fetch(process.env.NEXT_PUBLIC_API_URL + " /api/v1/excel/hotlinerang1/analyze", {
     method: "POST",
     body: formData,
   });

@@ -148,7 +148,7 @@ export default function UnifiedUploader() {
     formData.append('file', fileToUpload);
 
     try {
-      const res = await fetch(`http://localhost:7623${endpoint}`, { method: 'POST', body: formData });
+      const res = await fetch(`process.env.NEXT_PUBLIC_API_URL + "${endpoint}`, { method: 'POST', body: formData });
       if (!res.ok) throw new Error("Erreur serveur");
       const fullData = await res.json();
       
