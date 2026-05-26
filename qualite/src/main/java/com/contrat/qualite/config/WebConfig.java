@@ -10,9 +10,10 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**") // T'appliquer CORS 3la ga3 les APIs
-                .allowedOrigins("http://localhost:3000") // L'port dyal Next.js
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // OPTIONS hya li katji m3a CORS
-                .allowedHeaders("*") // N9blou ga3 les headers
+                // L'FIX HWA HADA: allowedOriginPatterns kat-9bel ay IP/Port
+                .allowedOriginPatterns("*")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
                 .allowCredentials(true);
     }
 }
