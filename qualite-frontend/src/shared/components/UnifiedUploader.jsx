@@ -10,7 +10,7 @@ import styles from "../styles/unified.module.css";
 export default function UnifiedUploader() {
   const [activeModule, setActiveModule] = useState(null); 
   
-  // L'FIX HNA: Fr9na les states bach kol tab tched l'fichier dyalha
+  // States mfr9in bach kol tab tched l'fichier w l'data dyalha
   const [fichier1Data, setFichier1Data] = useState(null);
   const [fichier2Data, setFichier2Data] = useState(null);
   const [zmdAmiiData, setZmdAmiiData] = useState(null);
@@ -48,7 +48,6 @@ export default function UnifiedUploader() {
       if (activeModule === "SACLI_OK") return { title: "Rapport : SACLI OK", data: fichier1Data.sacli };
       if (activeModule === "SARCLI_NOK") return { title: "Rapport : SARCLI NOK", data: fichier1Data.sarcli };
     } 
-    // L'FIX: Kol tab db kat-chouf l'data dyalha b dbt (machi dakhlin f state we7da)
     else if (activeModule === "ZMD_AMII" && zmdAmiiData) return { title: "Rapport : ZMD AMII (Taux de Report TH)", data: zmdAmiiData.zmdAmii };
     else if (activeModule === "ZMD_RIP" && zmdRipData) return { title: "Rapport : ZMD RIP (Taux de Report TH)", data: zmdRipData.zmdRip };
     else if (activeModule === "ZTD" && ztdData) return { title: "Rapport : ZTD (Taux de Report TH)", data: ztdData.ztd };
@@ -148,11 +147,15 @@ export default function UnifiedUploader() {
     formData.append('file', fileToUpload);
 
     try {
-      const res = await fetch(`process.env.NEXT_PUBLIC_API_URL + "${endpoint}`, { method: 'POST', body: formData });
+      // THE FIX IS HERE: Backticks `` for Template Literals
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, { 
+        method: 'POST', 
+        body: formData 
+      });
+      
       if (!res.ok) throw new Error("Erreur serveur");
       const fullData = await res.json();
       
-      // L'FIX: Knsauvegardew ghir l'data dyal l'tab li 7na fiha db
       if (isFichier1Group) setFichier1Data(fullData);
       else if (activeModule === "ZMD_AMII") setZmdAmiiData(fullData);
       else if (activeModule === "ZMD_RIP") setZmdRipData(fullData);
@@ -161,7 +164,8 @@ export default function UnifiedUploader() {
       
       setFileToUpload(null); 
     } catch (err) {
-      setError(`Échec de l'analyse du fichier. Vérifiez votre Backend.`);
+      console.error("Fetch Error: ", err);
+      setError(`Échec de l'analyse du fichier. Vérifiez votre Backend ou l'URL.`);
     } finally {
       setLoading(false);
     }
