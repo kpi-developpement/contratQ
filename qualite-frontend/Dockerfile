@@ -1,4 +1,5 @@
-FROM node:18-alpine
+# Beddelna Node 18 b Node 20 bach y-khdem m3a Next.js
+FROM node:20-alpine
 
 WORKDIR /app
 
