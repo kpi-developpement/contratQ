@@ -3,45 +3,44 @@ pipeline {
 
     environment {
         COMPOSE_PROJECT_NAME = "contratq-prod"
-        // 🔥 L'VARIABLE DYNAMIQUE: Hna t-7et l'IP wla l'Domaine dyal l'serveur dyalek
-        API_URL = "http://YOUR_SERVER_IP:7623"
     }
 
     stages {
         stage('🧹 Clean & Checkout') {
             steps {
                 script {
-                    echo "=> [ÉTAPE 1] Nettoyage w téléchargement dyal l'Code ContratQ mn GitHub..."
+                    echo "=> [ÉTAPE 1] Récupération d l'code jdid mn GitHub..."
                     cleanWs()
                     checkout scm
                 }
             }
         }
 
-        stage('🛑 Teiyya7 l-9dim (Free Ports)') {
+        stage('💥 Frappe Chirurgicale (Risk Management)') {
             steps {
                 script {
-                    echo "=> [ÉTAPE 2] Arrêt dyal l'ancienne version bach n-khewiw les ports..."
-                    sh "docker compose -f docker-compose.yml down || true"
+                    echo "=> [ÉTAPE 2] N-tiy7ou GHIR l-containers dyal ContratQ..."
+                    // 🛡️ THE SHIELD: Kan-ms7ou ghir l'Back w l'Front. L'DB w Volume b3aaad w trankil!
+                    sh "docker rm -f contratq_backend_prod contratq_frontend_prod || true"
                 }
             }
         }
 
-        stage('🚀 Build & Deploy Jdid') {
+        stage('🚀 Build & Deploy (ContratQ)') {
             steps {
                 script {
-                    echo "=> [ÉTAPE 3] Lancement dyal l'architecture jdida..."
-                    // Kan-passiw API_URL l'docker-compose bach y-injectiha f l'build dyal Next.js
-                    sh "API_URL=${API_URL} docker compose -f docker-compose.yml up -d --build"
+                    echo "=> [ÉTAPE 3] Lancement dyal l'ecosysteme ContratQ..."
+                    // up -d --build kat-bni w kat-lanci bla ma t-msse7 volumes
+                    sh "docker compose up -d --build"
                 }
             }
         }
 
-        stage('🛡️ Risk Management (Clean Up)') {
+        stage('🛡️ Clean Up (Images)') {
             steps {
                 script {
-                    echo "=> [ÉTAPE 4] Nettoyage dyal les vieilles images w les réseaux orphelins..."
-                    sh "docker system prune -af --volumes"
+                    echo "=> [ÉTAPE 4] Nettoyage dyal les images l-qdam..."
+                    sh "docker image prune -f"
                 }
             }
         }
@@ -49,11 +48,15 @@ pipeline {
 
     post {
         success {
-            echo "✅ DÉPLOIEMENT CONTRATQ RÉUSSI ABRO!"
-            echo "L'API khdama f port 7623, w l'Frontend f port 8741."
+            echo "========================================================"
+            echo "✅ DÉPLOIEMENT CONTRATQ RÉUSSI !"
+            echo "🌐 Frontend: http://10.10.10.50:8741"
+            echo "⚙️ Backend: http://10.10.10.50:7623"
+            echo "🛡️ BASE DE DONNÉES SÉCURISÉE (Volume Intact 100%)"
+            echo "========================================================"
         }
         failure {
-            echo "❌ MOCHKIL F L'DEPLOIEMENT ! Checki l'logs dyal Jenkins."
+            echo "❌ ÉCHEC DU DÉPLOIEMENT."
         }
     }
 }

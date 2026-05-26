@@ -10,7 +10,12 @@ services:
     ports:
       - "7623:7623" 
     environment:
-      # N'forciw l'Backend y-accepter les fichiers kbar mn Docker env
+      # 🛡️ THE SHIELD: Hna kan-goulou l'Backend y-hder m3a DB l-qdima li f l'serveur 
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://10.10.10.50:5432/kyntus_db
+      - SPRING_DATASOURCE_USERNAME=kyntus_user
+      - SPRING_DATASOURCE_PASSWORD=kyntus_password
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      
       - SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE=500MB
       - SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE=500MB
     deploy:
@@ -25,12 +30,11 @@ services:
       context: ./qualite-frontend
       dockerfile: Dockerfile
       args:
-        # Hna katji l'valeur dynamique mn Jenkins
-        - NEXT_PUBLIC_API_URL=${API_URL:-http://localhost:7623}
+        # L'Navigateur ghay-hder m3a l'IP d l'serveur
+        - NEXT_PUBLIC_API_URL=${API_URL:-http://10.10.10.50:7623}
     container_name: contratq_frontend_prod
     restart: unless-stopped
     ports:
-      # Port jdid w b3id 3la 3000
       - "8741:8741"
     environment:
       - PORT=8741
