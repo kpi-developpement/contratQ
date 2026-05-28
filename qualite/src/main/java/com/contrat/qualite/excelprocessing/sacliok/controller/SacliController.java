@@ -1,13 +1,12 @@
-package com.contrat.qualite.excelprocessing.sacli.controller;
+package com.contrat.qualite.excelprocessing.sacliok.controller;
 
-import com.contrat.qualite.excelprocessing.sacli.dto.SacliResultDto;
-import com.contrat.qualite.excelprocessing.sacli.service.SacliService;
+import com.contrat.qualite.excelprocessing.sacliok.dto.SacliResultDto;
+import com.contrat.qualite.excelprocessing.sacliok.service.SacliService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-// L'FIX: Zidna maxAge w 3tinah toutes les méthodes bach maybloukich les requêtes Preflight dyal l'navigateur
 @CrossOrigin(origins = "http://localhost:3000", maxAge = 3600)
 @RestController
 @RequestMapping("/api/v1/excel/sacli")

@@ -1,4 +1,4 @@
-package com.contrat.qualite.excelprocessing.sacli.dto;
+package com.contrat.qualite.excelprocessing.sarclinok.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SacliResultDto {
+public class SarcliResultDto {
     private long num;
     private long denum;
     private double resultat;

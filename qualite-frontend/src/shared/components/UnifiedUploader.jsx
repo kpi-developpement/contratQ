@@ -7,15 +7,25 @@ import ResultCard from "./ResultCard";
 import MasterTable from "./MasterTable";
 import styles from "../styles/unified.module.css";
 
+// 1. Mapping dyal les APIs l kol module (Clean Architecture)
+const API_ENDPOINTS = {
+  SACLI_OK: "/api/v1/excel/sacli/analyze",
+  SARCLI_NOK: "/api/v1/excel/sarcli/analyze",
+  TNH: "/api/v1/excel/tnh/analyze",
+  PERF_RANG_1: "/api/v1/excel/perfrang1/analyze",
+  HOTLINE_RANG_1: "/api/v1/excel/hotlinerang1/analyze",
+  CONSTRUCTION_RANG_1: "/api/v1/excel/constructionrang1/analyze",
+  PERF_RANG_2: "/api/v1/excel/perfrang2/analyze",
+  ZMD_AMII: "/api/v1/excel/zmdamii/analyze",
+  ZMD_RIP: "/api/v1/excel/zmdrip/analyze",
+  ZTD: "/api/v1/excel/ztd/analyze"
+};
+
 export default function UnifiedUploader() {
   const [activeModule, setActiveModule] = useState(null); 
   
-  // States mfr9in bach kol tab tched l'fichier w l'data dyalha
-  const [fichier1Data, setFichier1Data] = useState(null);
-  const [fichier2Data, setFichier2Data] = useState(null);
-  const [zmdAmiiData, setZmdAmiiData] = useState(null);
-  const [zmdRipData, setZmdRipData] = useState(null);
-  const [ztdData, setZtdData] = useState(null);
+  // 2. Cache system: kayssejel data dyal kol module bach matmchich ila bdelna tab
+  const [resultsCache, setResultsCache] = useState({});
   
   const [fileToUpload, setFileToUpload] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -37,32 +47,10 @@ export default function UnifiedUploader() {
     ZTD: { id: 'ZTD', label: 'ZTD', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path><path d="M8 6h.01"></path><path d="M16 6h.01"></path><path d="M12 6h.01"></path><path d="M12 10h.01"></path><path d="M12 14h.01"></path><path d="M16 10h.01"></path><path d="M16 14h.01"></path><path d="M8 10h.01"></path><path d="M8 14h.01"></path></svg> }
   };
 
-  const isFichier1Group = ["SACLI_OK", "SARCLI_NOK"].includes(activeModule);
-  const isFichier3Group = ["ZMD_AMII", "ZMD_RIP", "ZTD"].includes(activeModule);
-  const isFichier2Group = !isFichier1Group && !isFichier3Group;
-
-  const getCurrentResult = () => {
-    if (!activeModule) return null;
-    
-    if (isFichier1Group && fichier1Data) {
-      if (activeModule === "SACLI_OK") return { title: "Rapport : SACLI OK", data: fichier1Data.sacli };
-      if (activeModule === "SARCLI_NOK") return { title: "Rapport : SARCLI NOK", data: fichier1Data.sarcli };
-    } 
-    else if (activeModule === "ZMD_AMII" && zmdAmiiData) return { title: "Rapport : ZMD AMII (Taux de Report TH)", data: zmdAmiiData.zmdAmii };
-    else if (activeModule === "ZMD_RIP" && zmdRipData) return { title: "Rapport : ZMD RIP (Taux de Report TH)", data: zmdRipData.zmdRip };
-    else if (activeModule === "ZTD" && ztdData) return { title: "Rapport : ZTD (Taux de Report TH)", data: ztdData.ztd };
-    
-    else if (isFichier2Group && fichier2Data) {
-      if (activeModule === "TNH") return { title: "Rapport : TNH (CR Delai)", data: fichier2Data.tnh };
-      if (activeModule === "PERF_RANG_1") return { title: "Rapport : PERF RANG 1 (PLP)", data: fichier2Data.perfRang1 };
-      if (activeModule === "HOTLINE_RANG_1") return { title: "Rapport : PERF RANG 1 (HOTLINE)", data: fichier2Data.hotlineRang1 };
-      if (activeModule === "CONSTRUCTION_RANG_1") return { title: "Rapport : PERF RANG 1 (CONSTRUCT)", data: fichier2Data.constructionRang1 };
-      if (activeModule === "PERF_RANG_2") return { title: "Rapport : PERF RANG 2 (TOUS PROCESS)", data: fichier2Data.perfRang2 };
-    }
-    return null;
-  };
-
-  const currentResult = getCurrentResult();
+  const isMultiGroup = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1", "PERF_RANG_2"].includes(activeModule);
+  
+  // Njbdou Data mn l'Cache 3la 7ssab chno m3zol db
+  const currentResult = activeModule ? resultsCache[activeModule] : null;
 
   const handleTabChange = (moduleId) => {
     setActiveModule(moduleId);
@@ -121,11 +109,12 @@ export default function UnifiedUploader() {
   };
 
   const handleResetData = () => {
-    if (isFichier1Group) setFichier1Data(null);
-    else if (activeModule === "ZMD_AMII") setZmdAmiiData(null);
-    else if (activeModule === "ZMD_RIP") setZmdRipData(null);
-    else if (activeModule === "ZTD") setZtdData(null);
-    else setFichier2Data(null);
+    // Katmsse7 gher data dyal tab li m3zola
+    setResultsCache(prev => {
+      const newCache = { ...prev };
+      delete newCache[activeModule];
+      return newCache;
+    });
     setFileToUpload(null);
   };
 
@@ -138,34 +127,33 @@ export default function UnifiedUploader() {
     setLoading(true); 
     setError(""); 
     
-    let endpoint = "";
-    if (isFichier1Group) endpoint = "/api/v1/dashboard/fichier1";
-    else if (isFichier3Group) endpoint = "/api/v1/dashboard/fichier3";
-    else endpoint = "/api/v1/dashboard/fichier2";
-
+    const endpoint = API_ENDPOINTS[activeModule];
     const formData = new FormData();
     formData.append('file', fileToUpload);
 
     try {
-      // THE FIX IS HERE: Backticks `` for Template Literals
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, { 
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7623';
+      const res = await fetch(`${baseUrl}${endpoint}`, { 
         method: 'POST', 
         body: formData 
       });
       
-      if (!res.ok) throw new Error("Erreur serveur");
+      if (!res.ok) throw new Error("Erreur serveur lors de l'analyse");
       const fullData = await res.json();
       
-      if (isFichier1Group) setFichier1Data(fullData);
-      else if (activeModule === "ZMD_AMII") setZmdAmiiData(fullData);
-      else if (activeModule === "ZMD_RIP") setZmdRipData(fullData);
-      else if (activeModule === "ZTD") setZtdData(fullData);
-      else setFichier2Data(fullData);
+      // Njibow smiyt l'module bach tbann mzyan f ResultTitle
+      const title = `Rapport : ${modules[activeModule].label}`;
+
+      // Nssjjlo l'data f l'cache b smiyt l'module
+      setResultsCache(prev => ({
+        ...prev,
+        [activeModule]: { title, data: fullData }
+      }));
       
       setFileToUpload(null); 
     } catch (err) {
       console.error("Fetch Error: ", err);
-      setError(`Échec de l'analyse du fichier. Vérifiez votre Backend ou l'URL.`);
+      setError(`Échec de l'analyse du fichier. Vérifiez que le Backend est lancé w API m9adda.`);
     } finally {
       setLoading(false);
     }
@@ -175,8 +163,6 @@ export default function UnifiedUploader() {
   const IconDenum = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>;
   const IconResult = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>;
 
-  const isMultiGroup = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1", "PERF_RANG_2"].includes(activeModule);
-
   const getZoneLabel = (zoneLetter) => {
     if (activeModule === "PERF_RANG_1") return `PLP ZONE ${zoneLetter}`;
     if (activeModule === "HOTLINE_RANG_1") return `HOTLINE ZONE ${zoneLetter}`;
@@ -185,20 +171,12 @@ export default function UnifiedUploader() {
     return `ZONE ${zoneLetter}`;
   };
 
-  const formatDataForUI = () => {
-    const raw = currentResult?.data;
-    if (!raw) return null;
-
-    if (!isMultiGroup) return raw;
-
-    return {
-      groupA: raw.groupA || raw.perfGroupA || raw.hotlineGroupA || raw.constructionGroupA || { num: 0, denum: 0, resultat: 0 },
-      groupB: raw.groupB || raw.perfGroupB || raw.hotlineGroupB || raw.constructionGroupB || { num: 0, denum: 0, resultat: 0 },
-      groupC: raw.groupC || raw.perfGroupC || raw.hotlineGroupC || raw.constructionGroupC || { num: 0, denum: 0, resultat: 0 },
-    };
-  };
-
-  const uiData = formatDataForUI();
+  // N-Formatiw l'Data bach tdkhoul l'UI blma tcrashi
+  const uiData = currentResult ? (isMultiGroup ? {
+    groupA: currentResult.data.groupA || { num: 0, denum: 0, resultat: 0 },
+    groupB: currentResult.data.groupB || { num: 0, denum: 0, resultat: 0 },
+    groupC: currentResult.data.groupC || { num: 0, denum: 0, resultat: 0 },
+  } : currentResult.data) : null;
 
   return (
     <>

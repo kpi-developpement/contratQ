@@ -1,7 +1,7 @@
-package com.contrat.qualite.excelprocessing.sarcli.controller;
+package com.contrat.qualite.excelprocessing.sarclinok.controller;
 
-import com.contrat.qualite.excelprocessing.sarcli.dto.SarcliResultDto;
-import com.contrat.qualite.excelprocessing.sarcli.service.SarcliService;
+import com.contrat.qualite.excelprocessing.sarclinok.dto.SarcliResultDto;
+import com.contrat.qualite.excelprocessing.sarclinok.service.SarcliService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
