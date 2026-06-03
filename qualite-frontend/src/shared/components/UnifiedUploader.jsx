@@ -7,21 +7,20 @@ import ResultCard from "./ResultCard";
 import MasterTable from "./MasterTable";
 import styles from "../styles/unified.module.css";
 
-// Endpoints dyal les fichiers 1 (Mfer9in)
+// 1. Zedt hna les APIs jdad (Standalone APIs)
 const API_ENDPOINTS_FICHIER_1 = {
   SACLI_OK: "/api/v1/excel/sacli/analyze",
   SARCLI_NOK: "/api/v1/excel/sarcli/analyze",
+  GEM_NOK: "/api/v1/excel/gemnok/analyze",
+  TAUX_20J: "/api/v1/excel/taux20j/analyze",
 };
 
 export default function UnifiedUploader() {
   const [activeModule, setActiveModule] = useState(null); 
   
-  // ==========================================
-  // STATES DYAL LES CACHES (L'Intelligence Hna)
-  // ==========================================
-  const [fichier1Cache, setFichier1Cache] = useState({}); // SACLI w SARCLI kol wa7d bo7do
-  const [fichier2Data, setFichier2Data] = useState(null); // Jame3 TNH w RANG1 w RANG2 kamlin!
-  const [fichier3Data, setFichier3Data] = useState(null); // Jame3 ZMD AMII, ZMD RIP, w ZTD!
+  const [fichier1Cache, setFichier1Cache] = useState({}); 
+  const [fichier2Data, setFichier2Data] = useState(null); 
+  const [fichier3Data, setFichier3Data] = useState(null); 
   
   const [fileToUpload, setFileToUpload] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -30,10 +29,13 @@ export default function UnifiedUploader() {
   const [error, setError] = useState("");
   const fileInputRef = useRef(null);
 
+  // 2. Zdthom f l'objet des modules
   const modules = {
     SACLI_OK: { id: 'SACLI_OK', label: 'SACLI OK', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg> },
     SARCLI_NOK: { id: 'SARCLI_NOK', label: 'SARCLI NOK', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> },
-    TNH: { id: 'TNH', label: 'TNH', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> },
+    GEM_NOK: { id: 'GEM_NOK', label: 'GEM NOK', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> },
+    TAUX_20J: { id: 'TAUX_20J', label: '1° RDV < 20J', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> },
+    TNH: { id: 'TNH', label: 'TNH', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> },
     PERF_RANG_1: { id: 'PERF_RANG_1', label: 'RANG 1 (PLP)', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg> },
     HOTLINE_RANG_1: { id: 'HOTLINE_RANG_1', label: 'RANG 1 (HOTLINE)', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg> },
     CONSTRUCTION_RANG_1: { id: 'CONSTRUCTION_RANG_1', label: 'RANG 1 (CONSTRUCT)', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg> },
@@ -43,29 +45,24 @@ export default function UnifiedUploader() {
     ZTD: { id: 'ZTD', label: 'ZTD', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path><path d="M8 6h.01"></path><path d="M16 6h.01"></path><path d="M12 6h.01"></path><path d="M12 10h.01"></path><path d="M12 14h.01"></path><path d="M16 10h.01"></path><path d="M16 14h.01"></path><path d="M8 10h.01"></path><path d="M8 14h.01"></path></svg> }
   };
 
-  const isFichier1Group = ["SACLI_OK", "SARCLI_NOK"].includes(activeModule);
+  // 3. Zedthom hna bach y3rfhom ana kol whda biha API Standalone
+  const isFichier1Group = ["SACLI_OK", "SARCLI_NOK", "GEM_NOK", "TAUX_20J"].includes(activeModule);
   const isFichier3Group = ["ZMD_AMII", "ZMD_RIP", "ZTD"].includes(activeModule);
   const isFichier2Group = !isFichier1Group && !isFichier3Group;
   
   const isMultiGroup = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1", "PERF_RANG_2"].includes(activeModule);
 
-  // ==========================================
-  // EXTRACTION DES DONNEES (L'Backend MAPPING)
-  // ==========================================
   const getCurrentResult = () => {
     if (!activeModule) return null;
     
-    // Fichier 1 (Mfer9in)
     if (isFichier1Group && fichier1Cache[activeModule]) {
       return fichier1Cache[activeModule];
     } 
-    // Fichier 3 (Mjemou3)
     else if (isFichier3Group && fichier3Data) {
       if (activeModule === "ZMD_AMII" && fichier3Data.zmdAmii) return { title: "Rapport : ZMD AMII", data: fichier3Data.zmdAmii };
       if (activeModule === "ZMD_RIP" && fichier3Data.zmdRip) return { title: "Rapport : ZMD RIP", data: fichier3Data.zmdRip };
       if (activeModule === "ZTD" && fichier3Data.ztd) return { title: "Rapport : ZTD", data: fichier3Data.ztd };
     }
-    // Fichier 2 (Mjemou3) -> Kima f l'DTO dyal Backend b dbt!
     else if (isFichier2Group && fichier2Data) {
       if (activeModule === "TNH" && fichier2Data.tnh) return { title: "Rapport : TNH (CR Delai)", data: fichier2Data.tnh };
       if (activeModule === "PERF_RANG_1" && fichier2Data.perfRang1) return { title: "Rapport : PERF RANG 1 (PLP)", data: fichier2Data.perfRang1 };
@@ -154,7 +151,6 @@ export default function UnifiedUploader() {
     setLoading(true); 
     setError(""); 
     
-    // Déterminer l'Endpoint 3la 7ssab l'Group dyal l'Fichier
     let endpoint = "";
     if (isFichier1Group) endpoint = API_ENDPOINTS_FICHIER_1[activeModule];
     else if (isFichier3Group) endpoint = "/api/v1/dashboard/fichier3";
@@ -170,10 +166,9 @@ export default function UnifiedUploader() {
         body: formData 
       });
       
-      if (!res.ok) throw new Error("Erreur serveur");
+      if (!res.ok) throw new Error("Erreur serveur lors de l'analyse");
       const fullData = await res.json();
       
-      // Stocker l'data f l'cache l'mounasib
       if (isFichier1Group) {
         const title = `Rapport : ${modules[activeModule].label}`;
         setFichier1Cache(prev => ({ ...prev, [activeModule]: { title, data: fullData } }));
@@ -188,7 +183,7 @@ export default function UnifiedUploader() {
       setFileToUpload(null); 
     } catch (err) {
       console.error("Fetch Error: ", err);
-      setError(`Échec de l'analyse. Vérifiez l'Backend w l'URL.`);
+      setError(`Échec de l'analyse du fichier. Vérifiez votre Backend.`);
     } finally {
       setLoading(false);
     }
