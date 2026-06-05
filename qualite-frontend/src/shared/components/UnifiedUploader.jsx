@@ -46,7 +46,11 @@ export default function UnifiedUploader() {
   const isFichier1Group = ["SACLI_OK", "SARCLI_NOK", "GEM_NOK", "TAUX_20J"].includes(activeModule);
   const isFichier3Group = ["ZMD_AMII", "ZMD_RIP", "ZTD"].includes(activeModule);
   const isFichier2Group = !isFichier1Group && !isFichier3Group;
+  
   const isMultiGroup = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1", "PERF_RANG_2"].includes(activeModule);
+  
+  // Logic dyal l'Bonus: Gher RANG 1 li kaytl3lo l'Bonus (RANG 2 mafihch)
+  const isBonusActive = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1"].includes(activeModule);
 
   const getCurrentResult = () => {
     if (!activeModule) return null;
@@ -141,10 +145,11 @@ export default function UnifiedUploader() {
     finally { setLoading(false); }
   };
 
+  // Les Icones
   const IconNum = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>;
   const IconDenum = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>;
-  // Icona dyal Part de Marché (Pie Chart)
   const IconPie = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>;
+  const IconBonus = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>;
   const IconResult = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>;
 
   const getZoneLabel = (zoneLetter) => {
@@ -160,21 +165,26 @@ export default function UnifiedUploader() {
     if (!raw) return null;
     if (!isMultiGroup) return raw;
     return {
-      groupA: raw.groupA || { num: 0, denum: 0, resultat: 0, partDeMarche: 0 },
-      groupB: raw.groupB || { num: 0, denum: 0, resultat: 0, partDeMarche: 0 },
-      groupC: raw.groupC || { num: 0, denum: 0, resultat: 0, partDeMarche: 0 },
+      groupA: raw.groupA || { num: 0, denum: 0, resultat: 0, partDeMarche: 0, bonus: 0 },
+      groupB: raw.groupB || { num: 0, denum: 0, resultat: 0, partDeMarche: 0, bonus: 0 },
+      groupC: raw.groupC || { num: 0, denum: 0, resultat: 0, partDeMarche: 0, bonus: 0 },
     };
   };
 
   const uiData = formatDataForUI();
+  
+  // Classe dynamique 3la hsab chhal mn carte ghadi tbban
+  const gridClass = isBonusActive ? "grid5" : "grid4";
 
   return (
     <>
       <style dangerouslySetInnerHTML={{__html: `
         body, html { background-color: #ffffff !important; margin: 0; padding: 0; overflow-x: hidden; overflow-y: auto !important; }
         canvas { position: fixed !important; top: 0; left: 0; z-index: -1; }
-        /* Astuce: Bach les 4 cartes may-overflowiwch w yjiw m9addin */
+        
         .grid4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 15px; }
+        /* Grid Jdida mnin kaykoun l'Bonus m'activé bach yhezz 5 dyal les cartes bchkl n9i */
+        .grid5 { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-top: 15px; }
       `}} />
 
       <div className={styles.mainWrapper} style={{ minHeight: '100vh', height: 'auto', overflowY: 'visible', position: 'relative', zIndex: 1, paddingBottom: '100px' }}>
@@ -307,29 +317,32 @@ export default function UnifiedUploader() {
                     <div className={styles.multiGroupResult}>
                       <div className={styles.groupContainer}>
                         <h4 className={styles.groupTitle}>Groupe A ({getZoneLabel('A')})</h4>
-                        <div className="grid4">
+                        <div className={gridClass}>
                           <ResultCard delay="0s" label="NUM" value={uiData.groupA.num} icon={<IconNum/>} />
                           <ResultCard delay="0.1s" label="DENUM" value={uiData.groupA.denum} icon={<IconDenum/>} />
-                          <ResultCard delay="0.15s" label="Part de Marché" value={`${uiData.groupA.partDeMarche || 0}%`} icon={<IconPie/>} />
+                          <ResultCard delay="0.15s" label="Part (Poids)" value={`${uiData.groupA.partDeMarche || 0}%`} icon={<IconPie/>} />
                           <ResultCard delay="0.2s" highlight={true} label="Taux" value={`${uiData.groupA.resultat}%`} icon={<IconResult/>} />
+                          {isBonusActive && <ResultCard delay="0.25s" highlight={true} label="Bonus" value={`+ ${uiData.groupA.bonus || 0}%`} icon={<IconBonus/>} />}
                         </div>
                       </div>
                       <div className={styles.groupContainer}>
                         <h4 className={styles.groupTitle}>Groupe B ({getZoneLabel('B')})</h4>
-                        <div className="grid4">
+                        <div className={gridClass}>
                           <ResultCard delay="0.1s" label="NUM" value={uiData.groupB.num} icon={<IconNum/>} />
                           <ResultCard delay="0.2s" label="DENUM" value={uiData.groupB.denum} icon={<IconDenum/>} />
-                          <ResultCard delay="0.25s" label="Part de Marché" value={`${uiData.groupB.partDeMarche || 0}%`} icon={<IconPie/>} />
+                          <ResultCard delay="0.25s" label="Part (Poids)" value={`${uiData.groupB.partDeMarche || 0}%`} icon={<IconPie/>} />
                           <ResultCard delay="0.3s" highlight={true} label="Taux" value={`${uiData.groupB.resultat}%`} icon={<IconResult/>} />
+                          {isBonusActive && <ResultCard delay="0.35s" highlight={true} label="Bonus" value={`+ ${uiData.groupB.bonus || 0}%`} icon={<IconBonus/>} />}
                         </div>
                       </div>
                       <div className={styles.groupContainer}>
                         <h4 className={styles.groupTitle}>Groupe C ({getZoneLabel('C')})</h4>
-                        <div className="grid4">
+                        <div className={gridClass}>
                           <ResultCard delay="0.2s" label="NUM" value={uiData.groupC.num} icon={<IconNum/>} />
                           <ResultCard delay="0.3s" label="DENUM" value={uiData.groupC.denum} icon={<IconDenum/>} />
-                          <ResultCard delay="0.35s" label="Part de Marché" value={`${uiData.groupC.partDeMarche || 0}%`} icon={<IconPie/>} />
+                          <ResultCard delay="0.35s" label="Part (Poids)" value={`${uiData.groupC.partDeMarche || 0}%`} icon={<IconPie/>} />
                           <ResultCard delay="0.4s" highlight={true} label="Taux" value={`${uiData.groupC.resultat}%`} icon={<IconResult/>} />
+                          {isBonusActive && <ResultCard delay="0.45s" highlight={true} label="Bonus" value={`+ ${uiData.groupC.bonus || 0}%`} icon={<IconBonus/>} />}
                         </div>
                       </div>
                     </div>

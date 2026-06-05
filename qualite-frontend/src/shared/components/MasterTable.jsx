@@ -6,6 +6,10 @@ export default function MasterTable({ data, activeModule }) {
   if (!data) return null;
 
   const isMultiGroup = data.groupA !== undefined;
+  
+  // Nchoufo wach had l'module fih l'bonus (Ghir RANG 1)
+  const isBonusActive = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1"].includes(activeModule);
+
   let tableRows = [];
 
   if (isMultiGroup) {
@@ -28,12 +32,14 @@ export default function MasterTable({ data, activeModule }) {
     ];
   }
 
+  // Les Totaux
   const totalNum = isMultiGroup ? tableRows.reduce((acc, row) => acc + row.data.num, 0) : data.num;
   const totalDenum = isMultiGroup ? tableRows.reduce((acc, row) => acc + row.data.denum, 0) : data.denum;
   const totalResultat = totalDenum > 0 ? ((totalNum / totalDenum) * 100).toFixed(2) : "0.00";
-  
-  // Total Part de marché dima khasso ykoun 100% (ola 0 ila makanch)
   const totalPart = totalDenum > 0 ? "100.00" : "0.00";
+  
+  // Total Bonus (Bima ana l'Backend kiderbou f Part de marché, jm3hom kaye3ti l'Total S7i7!)
+  const totalBonus = isBonusActive ? tableRows.reduce((acc, row) => acc + (row.data.bonus || 0), 0).toFixed(2) : "0.00";
 
   return (
     <div className={styles.tableWrapper}>
@@ -50,7 +56,8 @@ export default function MasterTable({ data, activeModule }) {
               <th className={styles.numCol}>Numérateur (NUM)</th>
               <th className={styles.denumCol}>Dénominateur (DENUM)</th>
               {isMultiGroup && <th className={styles.denumCol}>Part de Marché</th>}
-              <th className={styles.resultCol}>Taux de Réussite (%)</th>
+              <th className={styles.resultCol}>Taux de Réussite</th>
+              {isBonusActive && <th className={styles.resultCol}>Bonus Gagné (Max 4%)</th>}
             </tr>
           </thead>
           <tbody>
@@ -76,6 +83,14 @@ export default function MasterTable({ data, activeModule }) {
                     {row.data.resultat}%
                   </span>
                 </td>
+
+                {isBonusActive && (
+                  <td className={styles.resultCol}>
+                    <span style={{color: '#F59E0B', fontWeight: '900', background: 'rgba(245, 158, 11, 0.1)', padding: '6px 12px', borderRadius: '10px', border: '1px solid rgba(245, 158, 11, 0.3)'}}>
+                      + {row.data.bonus || 0}%
+                    </span>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -93,6 +108,13 @@ export default function MasterTable({ data, activeModule }) {
                     {totalResultat}%
                   </span>
                 </td>
+                {isBonusActive && (
+                  <td className={styles.resultCol}>
+                    <span style={{color: '#fff', background: 'linear-gradient(135deg, #F59E0B, #D97706)', padding: '8px 16px', borderRadius: '12px', fontWeight: '900', boxShadow: '0 4px 15px rgba(245, 158, 11, 0.4)'}}>
+                      + {totalBonus}%
+                    </span>
+                  </td>
+                )}
               </tr>
             </tfoot>
           )}

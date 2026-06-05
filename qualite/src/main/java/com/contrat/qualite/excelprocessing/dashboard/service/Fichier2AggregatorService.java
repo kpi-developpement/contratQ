@@ -27,15 +27,10 @@ import java.util.Map;
 public class Fichier2AggregatorService {
 
     public Fichier2ResponseDto processFichier2(MultipartFile file) {
-        // TNH
         long tnhNum = 0, tnhDenum = 0;
-        // Perf Rang 1 (PLP)
         long p1NumA = 0, p1DenA = 0, p1NumB = 0, p1DenB = 0, p1NumC = 0, p1DenC = 0;
-        // Hotline Rang 1
         long hNumA = 0, hDenA = 0, hNumB = 0, hDenB = 0, hNumC = 0, hDenC = 0;
-        // Construction Rang 1
         long cNumA = 0, cDenA = 0, cNumB = 0, cDenB = 0, cNumC = 0, cDenC = 0;
-        // Perf Rang 2
         long p2NumA = 0, p2DenA = 0, p2NumB = 0, p2DenB = 0, p2NumC = 0, p2DenC = 0;
 
         CSVFormat format = CSVFormat.Builder.create()
@@ -61,7 +56,7 @@ public class Fichier2AggregatorService {
             }
 
             for (CSVRecord record : parser) {
-                // 1. TNH
+                // TNH
                 tnhDenum++;
                 if (actualMotifCol != null && record.isMapped(actualMotifCol)) {
                     String motifValue = record.get(actualMotifCol);
@@ -70,7 +65,7 @@ public class Fichier2AggregatorService {
                     }
                 }
 
-                // 2. RANG 1 W RANG 2
+                // RANG 1 & RANG 2
                 if (actualRangCol != null && actualZoneCol != null && actualStatutCol != null
                         && record.isMapped(actualRangCol) && record.isMapped(actualZoneCol) && record.isMapped(actualStatutCol)) {
 
@@ -112,39 +107,36 @@ public class Fichier2AggregatorService {
             throw new RuntimeException("Erreur f l'analyse: " + e.getMessage());
         }
 
-        // ==========================================
-        // L'INTELLIGENCE JDIDA: Calcul dyal Total Denums
-        // ==========================================
-
-        // Jme3na ga3 les Denum dyal Rang 1 (PLP + Hotline + Construct) f A w B w C
+        // Calcul du DENUM GLOBAL (RANG 1 w RANG 2)
         long totalDenumRang1 = p1DenA + p1DenB + p1DenC +
                 hDenA + hDenB + hDenC +
                 cDenA + cDenB + cDenC;
 
-        // Jme3na ga3 les Denum dyal Rang 2
         long totalDenumRang2 = p2DenA + p2DenB + p2DenC;
 
+        // BINA L'RESULTAT B HELPER METHODS BACH YB9A CLEAN
         return Fichier2ResponseDto.builder()
                 .tnh(new TnhResultDto(tnhNum, tnhDenum, calc(tnhNum, tnhDenum)))
 
                 .perfRang1(new PerfRang1ResultDto(
-                        new PerfGroupDto(p1NumA, p1DenA, calc(p1NumA, p1DenA), calcPart(p1DenA, totalDenumRang1)),
-                        new PerfGroupDto(p1NumB, p1DenB, calc(p1NumB, p1DenB), calcPart(p1DenB, totalDenumRang1)),
-                        new PerfGroupDto(p1NumC, p1DenC, calc(p1NumC, p1DenC), calcPart(p1DenC, totalDenumRang1))
+                        buildPerfGroup(p1NumA, p1DenA, totalDenumRang1),
+                        buildPerfGroup(p1NumB, p1DenB, totalDenumRang1),
+                        buildPerfGroup(p1NumC, p1DenC, totalDenumRang1)
                 ))
 
                 .hotlineRang1(new HotlineRang1ResultDto(
-                        new HotlineGroupDto(hNumA, hDenA, calc(hNumA, hDenA), calcPart(hDenA, totalDenumRang1)),
-                        new HotlineGroupDto(hNumB, hDenB, calc(hNumB, hDenB), calcPart(hDenB, totalDenumRang1)),
-                        new HotlineGroupDto(hNumC, hDenC, calc(hNumC, hDenC), calcPart(hDenC, totalDenumRang1))
+                        buildHotlineGroup(hNumA, hDenA, totalDenumRang1),
+                        buildHotlineGroup(hNumB, hDenB, totalDenumRang1),
+                        buildHotlineGroup(hNumC, hDenC, totalDenumRang1)
                 ))
 
                 .constructionRang1(new ConstructionRang1ResultDto(
-                        new ConstructionGroupDto(cNumA, cDenA, calc(cNumA, cDenA), calcPart(cDenA, totalDenumRang1)),
-                        new ConstructionGroupDto(cNumB, cDenB, calc(cNumB, cDenB), calcPart(cDenB, totalDenumRang1)),
-                        new ConstructionGroupDto(cNumC, cDenC, calc(cNumC, cDenC), calcPart(cDenC, totalDenumRang1))
+                        buildConstructionGroup(cNumA, cDenA, totalDenumRang1),
+                        buildConstructionGroup(cNumB, cDenB, totalDenumRang1),
+                        buildConstructionGroup(cNumC, cDenC, totalDenumRang1)
                 ))
 
+                // RANG 2 MAFIHCH BONUS
                 .perfRang2(new PerfRang2ResultDto(
                         new PerfRang2GroupDto(p2NumA, p2DenA, calc(p2NumA, p2DenA), calcPart(p2DenA, totalDenumRang2)),
                         new PerfRang2GroupDto(p2NumB, p2DenB, calc(p2NumB, p2DenB), calcPart(p2DenB, totalDenumRang2)),
@@ -153,14 +145,63 @@ public class Fichier2AggregatorService {
                 .build();
     }
 
+
+    // ==========================================
+    // HELPERS: FONCTIONS DYAL CALCUL
+    // ==========================================
+
     private double calc(long num, long denum) {
         if (denum == 0) return 0.0;
         return Math.round((((double) num / denum) * 100) * 100.0) / 100.0;
     }
 
-    // Fonction jdida l'calcul dyal Part de Marché
     private double calcPart(long localDenum, long globalDenum) {
         if (globalDenum == 0) return 0.0;
         return Math.round((((double) localDenum / globalDenum) * 100) * 100.0) / 100.0;
+    }
+
+    // FORMULE DYAL L'BONUS L'WA3RA LI GITI
+    private double calcBonus(double resultat, double partDeMarche) {
+        double pointMin = 93.00;
+        double pointMax = 98.00;
+        double bonusMax = 4.0;
+
+        // La part de marché khassha t9ssem 3la 100 7it katji b chkl (50.5) machi (0.505)
+        double partRatio = partDeMarche / 100.0;
+
+        if (resultat <= pointMin) {
+            return 0.0;
+        } else if (resultat >= pointMax) {
+            return Math.round((bonusMax * partRatio) * 100.0) / 100.0;
+        } else {
+            // Interpolation Linéaire (Règle de 3)
+            double bonus = ((resultat - pointMin) / (pointMax - pointMin)) * bonusMax * partRatio;
+            return Math.round(bonus * 100.0) / 100.0;
+        }
+    }
+
+    // ==========================================
+    // FACTORY METHODS L'DTOs BACH YB9A CODE N9I
+    // ==========================================
+
+    private PerfGroupDto buildPerfGroup(long num, long denum, long totalDenumGlobal) {
+        double res = calc(num, denum);
+        double part = calcPart(denum, totalDenumGlobal);
+        double bonus = calcBonus(res, part);
+        return new PerfGroupDto(num, denum, res, part, bonus);
+    }
+
+    private HotlineGroupDto buildHotlineGroup(long num, long denum, long totalDenumGlobal) {
+        double res = calc(num, denum);
+        double part = calcPart(denum, totalDenumGlobal);
+        double bonus = calcBonus(res, part);
+        return new HotlineGroupDto(num, denum, res, part, bonus);
+    }
+
+    private ConstructionGroupDto buildConstructionGroup(long num, long denum, long totalDenumGlobal) {
+        double res = calc(num, denum);
+        double part = calcPart(denum, totalDenumGlobal);
+        double bonus = calcBonus(res, part);
+        return new ConstructionGroupDto(num, denum, res, part, bonus);
     }
 }

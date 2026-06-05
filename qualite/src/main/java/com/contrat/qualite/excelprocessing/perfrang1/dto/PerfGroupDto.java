@@ -13,5 +13,6 @@ public class PerfGroupDto {
     private long num;
     private long denum;
     private double resultat;
-    private double partDeMarche; // <-- ZEDNA HADI
+    private double partDeMarche;
+    private double bonus; // <-- ZEDNA L'BONUS HNA
 }
