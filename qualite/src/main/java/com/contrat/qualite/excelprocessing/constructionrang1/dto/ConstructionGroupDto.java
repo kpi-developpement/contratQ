@@ -13,4 +13,5 @@ public class ConstructionGroupDto {
     private long num;
     private long denum;
     private double resultat;
+    private double partDeMarche; // <-- ZEDNA HADI
 }

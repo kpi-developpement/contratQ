@@ -38,7 +38,6 @@ public class Fichier2AggregatorService {
         // Perf Rang 2
         long p2NumA = 0, p2DenA = 0, p2NumB = 0, p2DenB = 0, p2NumC = 0, p2DenC = 0;
 
-        // Kheddamna b Commons CSV kima derti f l'anciens services dyalek
         CSVFormat format = CSVFormat.Builder.create()
                 .setDelimiter(';')
                 .setHeader()
@@ -53,7 +52,6 @@ public class Fichier2AggregatorService {
             Map<String, Integer> headerMap = parser.getHeaderMap();
             String actualZoneCol = null, actualRangCol = null, actualStatutCol = null, actualMotifCol = null;
 
-            // Fuzzy Match l'headers bach ntfadaw mochkil dyal majuscule/minuscule awla espaces
             for (String header : headerMap.keySet()) {
                 String cleanHeader = header.trim().toLowerCase();
                 if (cleanHeader.contains("zone_statut prise")) actualZoneCol = header;
@@ -63,10 +61,8 @@ public class Fichier2AggregatorService {
             }
 
             for (CSVRecord record : parser) {
-                // ==========================================
-                // 1. LOGIQUE TNH (CR Delai)
-                // ==========================================
-                tnhDenum++; // F TnhService knti kat7seb ga3 les lignes dima
+                // 1. TNH
+                tnhDenum++;
                 if (actualMotifCol != null && record.isMapped(actualMotifCol)) {
                     String motifValue = record.get(actualMotifCol);
                     if (motifValue != null && "CR DELAI - Organisation installateur".equalsIgnoreCase(motifValue.trim())) {
@@ -74,9 +70,7 @@ public class Fichier2AggregatorService {
                     }
                 }
 
-                // ==========================================
-                // 2. LOGIQUE KPIs RANG 1 W RANG 2
-                // ==========================================
+                // 2. RANG 1 W RANG 2
                 if (actualRangCol != null && actualZoneCol != null && actualStatutCol != null
                         && record.isMapped(actualRangCol) && record.isMapped(actualZoneCol) && record.isMapped(actualStatutCol)) {
 
@@ -85,38 +79,28 @@ public class Fichier2AggregatorService {
                     String rawStatut = record.get(actualStatutCol);
 
                     String rang = rawRang != null ? rawRang.trim() : "";
-                    // Nfs l'cleanup d l'espaces li knti dayer
                     String zone = rawZone != null ? rawZone.toUpperCase().replaceAll("[\\n\\r]+", " ").replaceAll("\\s+", " ").trim() : "";
                     String statut = rawStatut != null ? rawStatut.toUpperCase().trim() : "";
 
                     boolean isRang1 = rang.equals("1") || rang.equals("1.0") || rang.equals("1,0");
                     boolean isCrOk = statut.equals("CR_MNT_OK");
 
-                    // ---------- PLP RANG 1 ----------
                     if (isRang1) {
                         if (zone.equals("PLP ZONE A")) { p1DenA++; if(isCrOk) p1NumA++; }
                         if (zone.equals("PLP ZONE B")) { p1DenB++; if(isCrOk) p1NumB++; }
                         if (zone.equals("PLP ZONE C")) { p1DenC++; if(isCrOk) p1NumC++; }
-                    }
 
-                    // ---------- HOTLINE RANG 1 ----------
-                    if (isRang1) {
                         if (zone.equals("HOTLINE ZONE A")) { hDenA++; if(isCrOk) hNumA++; }
                         if (zone.equals("HOTLINE ZONE B")) { hDenB++; if(isCrOk) hNumB++; }
                         if (zone.equals("HOTLINE ZONE C")) { hDenC++; if(isCrOk) hNumC++; }
-                    }
 
-                    // ---------- CONSTRUCTION RANG 1 ----------
-                    if (isRang1) {
                         if (zone.equals("CONSTRUCTION ZONE A")) { cDenA++; if(isCrOk) cNumA++; }
                         if (zone.equals("CONSTRUCTION ZONE B")) { cDenB++; if(isCrOk) cNumB++; }
                         if (zone.equals("CONSTRUCTION ZONE C")) { cDenC++; if(isCrOk) cNumC++; }
                     }
 
-                    // ---------- PERF RANG 2 ----------
                     boolean isRangNot1 = !rang.isEmpty() && !isRang1;
                     if (isRangNot1) {
-                        // F PerfRang2Service knti dayer contains machi equals
                         if (zone.contains("ZONE A")) { p2DenA++; if(isCrOk) p2NumA++; }
                         if (zone.contains("ZONE B")) { p2DenB++; if(isCrOk) p2NumB++; }
                         if (zone.contains("ZONE C")) { p2DenC++; if(isCrOk) p2NumC++; }
@@ -124,32 +108,47 @@ public class Fichier2AggregatorService {
                 }
             }
         } catch (Exception e) {
-            log.error("Erreur f l'analyse dyal Fichier 2 b Commons CSV", e);
+            log.error("Erreur f l'analyse dyal Fichier 2", e);
             throw new RuntimeException("Erreur f l'analyse: " + e.getMessage());
         }
 
-        // L'Mapping dyal les Resultats kaymchi direct l'DTO li kaytsnnah l'Frontend
+        // ==========================================
+        // L'INTELLIGENCE JDIDA: Calcul dyal Total Denums
+        // ==========================================
+
+        // Jme3na ga3 les Denum dyal Rang 1 (PLP + Hotline + Construct) f A w B w C
+        long totalDenumRang1 = p1DenA + p1DenB + p1DenC +
+                hDenA + hDenB + hDenC +
+                cDenA + cDenB + cDenC;
+
+        // Jme3na ga3 les Denum dyal Rang 2
+        long totalDenumRang2 = p2DenA + p2DenB + p2DenC;
+
         return Fichier2ResponseDto.builder()
                 .tnh(new TnhResultDto(tnhNum, tnhDenum, calc(tnhNum, tnhDenum)))
+
                 .perfRang1(new PerfRang1ResultDto(
-                        new PerfGroupDto(p1NumA, p1DenA, calc(p1NumA, p1DenA)),
-                        new PerfGroupDto(p1NumB, p1DenB, calc(p1NumB, p1DenB)),
-                        new PerfGroupDto(p1NumC, p1DenC, calc(p1NumC, p1DenC))
+                        new PerfGroupDto(p1NumA, p1DenA, calc(p1NumA, p1DenA), calcPart(p1DenA, totalDenumRang1)),
+                        new PerfGroupDto(p1NumB, p1DenB, calc(p1NumB, p1DenB), calcPart(p1DenB, totalDenumRang1)),
+                        new PerfGroupDto(p1NumC, p1DenC, calc(p1NumC, p1DenC), calcPart(p1DenC, totalDenumRang1))
                 ))
+
                 .hotlineRang1(new HotlineRang1ResultDto(
-                        new HotlineGroupDto(hNumA, hDenA, calc(hNumA, hDenA)),
-                        new HotlineGroupDto(hNumB, hDenB, calc(hNumB, hDenB)),
-                        new HotlineGroupDto(hNumC, hDenC, calc(hNumC, hDenC))
+                        new HotlineGroupDto(hNumA, hDenA, calc(hNumA, hDenA), calcPart(hDenA, totalDenumRang1)),
+                        new HotlineGroupDto(hNumB, hDenB, calc(hNumB, hDenB), calcPart(hDenB, totalDenumRang1)),
+                        new HotlineGroupDto(hNumC, hDenC, calc(hNumC, hDenC), calcPart(hDenC, totalDenumRang1))
                 ))
+
                 .constructionRang1(new ConstructionRang1ResultDto(
-                        new ConstructionGroupDto(cNumA, cDenA, calc(cNumA, cDenA)),
-                        new ConstructionGroupDto(cNumB, cDenB, calc(cNumB, cDenB)),
-                        new ConstructionGroupDto(cNumC, cDenC, calc(cNumC, cDenC))
+                        new ConstructionGroupDto(cNumA, cDenA, calc(cNumA, cDenA), calcPart(cDenA, totalDenumRang1)),
+                        new ConstructionGroupDto(cNumB, cDenB, calc(cNumB, cDenB), calcPart(cDenB, totalDenumRang1)),
+                        new ConstructionGroupDto(cNumC, cDenC, calc(cNumC, cDenC), calcPart(cDenC, totalDenumRang1))
                 ))
+
                 .perfRang2(new PerfRang2ResultDto(
-                        new PerfRang2GroupDto(p2NumA, p2DenA, calc(p2NumA, p2DenA)),
-                        new PerfRang2GroupDto(p2NumB, p2DenB, calc(p2NumB, p2DenB)),
-                        new PerfRang2GroupDto(p2NumC, p2DenC, calc(p2NumC, p2DenC))
+                        new PerfRang2GroupDto(p2NumA, p2DenA, calc(p2NumA, p2DenA), calcPart(p2DenA, totalDenumRang2)),
+                        new PerfRang2GroupDto(p2NumB, p2DenB, calc(p2NumB, p2DenB), calcPart(p2DenB, totalDenumRang2)),
+                        new PerfRang2GroupDto(p2NumC, p2DenC, calc(p2NumC, p2DenC), calcPart(p2DenC, totalDenumRang2))
                 ))
                 .build();
     }
@@ -157,5 +156,11 @@ public class Fichier2AggregatorService {
     private double calc(long num, long denum) {
         if (denum == 0) return 0.0;
         return Math.round((((double) num / denum) * 100) * 100.0) / 100.0;
+    }
+
+    // Fonction jdida l'calcul dyal Part de Marché
+    private double calcPart(long localDenum, long globalDenum) {
+        if (globalDenum == 0) return 0.0;
+        return Math.round((((double) localDenum / globalDenum) * 100) * 100.0) / 100.0;
     }
 }

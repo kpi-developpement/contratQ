@@ -7,7 +7,6 @@ import ResultCard from "./ResultCard";
 import MasterTable from "./MasterTable";
 import styles from "../styles/unified.module.css";
 
-// 1. Zedt hna les APIs jdad (Standalone APIs)
 const API_ENDPOINTS_FICHIER_1 = {
   SACLI_OK: "/api/v1/excel/sacli/analyze",
   SARCLI_NOK: "/api/v1/excel/sarcli/analyze",
@@ -29,7 +28,6 @@ export default function UnifiedUploader() {
   const [error, setError] = useState("");
   const fileInputRef = useRef(null);
 
-  // 2. Zdthom f l'objet des modules
   const modules = {
     SACLI_OK: { id: 'SACLI_OK', label: 'SACLI OK', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg> },
     SARCLI_NOK: { id: 'SARCLI_NOK', label: 'SARCLI NOK', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> },
@@ -45,19 +43,14 @@ export default function UnifiedUploader() {
     ZTD: { id: 'ZTD', label: 'ZTD', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path><path d="M8 6h.01"></path><path d="M16 6h.01"></path><path d="M12 6h.01"></path><path d="M12 10h.01"></path><path d="M12 14h.01"></path><path d="M16 10h.01"></path><path d="M16 14h.01"></path><path d="M8 10h.01"></path><path d="M8 14h.01"></path></svg> }
   };
 
-  // 3. Zedthom hna bach y3rfhom ana kol whda biha API Standalone
   const isFichier1Group = ["SACLI_OK", "SARCLI_NOK", "GEM_NOK", "TAUX_20J"].includes(activeModule);
   const isFichier3Group = ["ZMD_AMII", "ZMD_RIP", "ZTD"].includes(activeModule);
   const isFichier2Group = !isFichier1Group && !isFichier3Group;
-  
   const isMultiGroup = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1", "PERF_RANG_2"].includes(activeModule);
 
   const getCurrentResult = () => {
     if (!activeModule) return null;
-    
-    if (isFichier1Group && fichier1Cache[activeModule]) {
-      return fichier1Cache[activeModule];
-    } 
+    if (isFichier1Group && fichier1Cache[activeModule]) return fichier1Cache[activeModule];
     else if (isFichier3Group && fichier3Data) {
       if (activeModule === "ZMD_AMII" && fichier3Data.zmdAmii) return { title: "Rapport : ZMD AMII", data: fichier3Data.zmdAmii };
       if (activeModule === "ZMD_RIP" && fichier3Data.zmdRip) return { title: "Rapport : ZMD RIP", data: fichier3Data.zmdRip };
@@ -76,25 +69,14 @@ export default function UnifiedUploader() {
   const currentResult = getCurrentResult();
 
   const handleTabChange = (moduleId) => {
-    setActiveModule(moduleId);
-    setFileToUpload(null); 
-    setError("");
+    setActiveModule(moduleId); setFileToUpload(null); setError("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   useEffect(() => {
-    const handleGlobalDragOver = (e) => {
-      e.preventDefault();
-      if (!fileToUpload && activeModule && !currentResult) setIsGlobalDragging(true);
-    };
-    const handleGlobalDragLeave = (e) => {
-      e.preventDefault();
-      if (e.clientX === 0 && e.clientY === 0) setIsGlobalDragging(false);
-    };
-    const handleGlobalDrop = (e) => {
-      e.preventDefault();
-      setIsGlobalDragging(false);
-    };
+    const handleGlobalDragOver = (e) => { e.preventDefault(); if (!fileToUpload && activeModule && !currentResult) setIsGlobalDragging(true); };
+    const handleGlobalDragLeave = (e) => { e.preventDefault(); if (e.clientX === 0 && e.clientY === 0) setIsGlobalDragging(false); };
+    const handleGlobalDrop = (e) => { e.preventDefault(); setIsGlobalDragging(false); };
 
     window.addEventListener("dragover", handleGlobalDragOver);
     window.addEventListener("dragleave", handleGlobalDragLeave);
@@ -110,87 +92,59 @@ export default function UnifiedUploader() {
   const handleDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
   const handleDragLeave = (e) => { e.preventDefault(); setIsDragging(false); };
   const handleDrop = (e) => {
-    e.preventDefault(); 
-    setIsDragging(false);
-    setIsGlobalDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setFileToUpload(e.dataTransfer.files[0]);
-      setError("");
-    }
+    e.preventDefault(); setIsDragging(false); setIsGlobalDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) { setFileToUpload(e.dataTransfer.files[0]); setError(""); }
   };
-  
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setFileToUpload(e.target.files[0]);
-      setError("");
-    }
+    if (e.target.files && e.target.files[0]) { setFileToUpload(e.target.files[0]); setError(""); }
   };
-
-  const removeFileToUpload = () => {
-    setFileToUpload(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
+  const removeFileToUpload = () => { setFileToUpload(null); if (fileInputRef.current) fileInputRef.current.value = ""; };
 
   const handleResetData = () => {
-    if (isFichier1Group) {
-      setFichier1Cache(prev => { const newC = {...prev}; delete newC[activeModule]; return newC; });
-    } else if (isFichier3Group) {
-      setFichier3Data(null); 
-    } else {
-      setFichier2Data(null); 
-    }
+    if (isFichier1Group) setFichier1Cache(prev => { const newC = {...prev}; delete newC[activeModule]; return newC; });
+    else if (isFichier3Group) setFichier3Data(null); 
+    else setFichier2Data(null); 
     setFileToUpload(null);
   };
 
   const handleAnalyze = async () => {
-    if (!fileToUpload || !activeModule) { 
-      setError("Veuillez injecter un fichier d'abord."); 
-      return; 
-    }
-    
-    setLoading(true); 
-    setError(""); 
+    if (!fileToUpload || !activeModule) return setError("Veuillez injecter un fichier d'abord.");
+    setLoading(true); setError("");
     
     let endpoint = "";
     if (isFichier1Group) endpoint = API_ENDPOINTS_FICHIER_1[activeModule];
     else if (isFichier3Group) endpoint = "/api/v1/dashboard/fichier3";
     else endpoint = "/api/v1/dashboard/fichier2";
 
-    const formData = new FormData();
-    formData.append('file', fileToUpload);
+    const formData = new FormData(); formData.append('file', fileToUpload);
 
     try {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7623';
-      const res = await fetch(`${baseUrl}${endpoint}`, { 
-        method: 'POST', 
-        body: formData 
-      });
+      const res = await fetch(`${baseUrl}${endpoint}`, { method: 'POST', body: formData });
       
-      if (!res.ok) throw new Error("Erreur serveur lors de l'analyse");
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || `Erreur serveur (Status: ${res.status})`);
+      }
+      
       const fullData = await res.json();
       
       if (isFichier1Group) {
         const title = `Rapport : ${modules[activeModule].label}`;
         setFichier1Cache(prev => ({ ...prev, [activeModule]: { title, data: fullData } }));
       } 
-      else if (isFichier3Group) {
-        setFichier3Data(fullData);
-      } 
-      else {
-        setFichier2Data(fullData);
-      }
+      else if (isFichier3Group) setFichier3Data(fullData);
+      else setFichier2Data(fullData);
       
       setFileToUpload(null); 
-    } catch (err) {
-      console.error("Fetch Error: ", err);
-      setError(`Échec de l'analyse du fichier. Vérifiez votre Backend.`);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { setError(`Échec : ${err.message}`); } 
+    finally { setLoading(false); }
   };
 
   const IconNum = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>;
   const IconDenum = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>;
+  // Icona dyal Part de Marché (Pie Chart)
+  const IconPie = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>;
   const IconResult = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>;
 
   const getZoneLabel = (zoneLetter) => {
@@ -204,13 +158,11 @@ export default function UnifiedUploader() {
   const formatDataForUI = () => {
     const raw = currentResult?.data;
     if (!raw) return null;
-
     if (!isMultiGroup) return raw;
-
     return {
-      groupA: raw.groupA || { num: 0, denum: 0, resultat: 0 },
-      groupB: raw.groupB || { num: 0, denum: 0, resultat: 0 },
-      groupC: raw.groupC || { num: 0, denum: 0, resultat: 0 },
+      groupA: raw.groupA || { num: 0, denum: 0, resultat: 0, partDeMarche: 0 },
+      groupB: raw.groupB || { num: 0, denum: 0, resultat: 0, partDeMarche: 0 },
+      groupC: raw.groupC || { num: 0, denum: 0, resultat: 0, partDeMarche: 0 },
     };
   };
 
@@ -221,6 +173,8 @@ export default function UnifiedUploader() {
       <style dangerouslySetInnerHTML={{__html: `
         body, html { background-color: #ffffff !important; margin: 0; padding: 0; overflow-x: hidden; overflow-y: auto !important; }
         canvas { position: fixed !important; top: 0; left: 0; z-index: -1; }
+        /* Astuce: Bach les 4 cartes may-overflowiwch w yjiw m9addin */
+        .grid4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 15px; }
       `}} />
 
       <div className={styles.mainWrapper} style={{ minHeight: '100vh', height: 'auto', overflowY: 'visible', position: 'relative', zIndex: 1, paddingBottom: '100px' }}>
@@ -353,25 +307,28 @@ export default function UnifiedUploader() {
                     <div className={styles.multiGroupResult}>
                       <div className={styles.groupContainer}>
                         <h4 className={styles.groupTitle}>Groupe A ({getZoneLabel('A')})</h4>
-                        <div className={styles.resultGridSmall}>
+                        <div className="grid4">
                           <ResultCard delay="0s" label="NUM" value={uiData.groupA.num} icon={<IconNum/>} />
                           <ResultCard delay="0.1s" label="DENUM" value={uiData.groupA.denum} icon={<IconDenum/>} />
+                          <ResultCard delay="0.15s" label="Part de Marché" value={`${uiData.groupA.partDeMarche || 0}%`} icon={<IconPie/>} />
                           <ResultCard delay="0.2s" highlight={true} label="Taux" value={`${uiData.groupA.resultat}%`} icon={<IconResult/>} />
                         </div>
                       </div>
                       <div className={styles.groupContainer}>
                         <h4 className={styles.groupTitle}>Groupe B ({getZoneLabel('B')})</h4>
-                        <div className={styles.resultGridSmall}>
+                        <div className="grid4">
                           <ResultCard delay="0.1s" label="NUM" value={uiData.groupB.num} icon={<IconNum/>} />
                           <ResultCard delay="0.2s" label="DENUM" value={uiData.groupB.denum} icon={<IconDenum/>} />
+                          <ResultCard delay="0.25s" label="Part de Marché" value={`${uiData.groupB.partDeMarche || 0}%`} icon={<IconPie/>} />
                           <ResultCard delay="0.3s" highlight={true} label="Taux" value={`${uiData.groupB.resultat}%`} icon={<IconResult/>} />
                         </div>
                       </div>
                       <div className={styles.groupContainer}>
                         <h4 className={styles.groupTitle}>Groupe C ({getZoneLabel('C')})</h4>
-                        <div className={styles.resultGridSmall}>
+                        <div className="grid4">
                           <ResultCard delay="0.2s" label="NUM" value={uiData.groupC.num} icon={<IconNum/>} />
                           <ResultCard delay="0.3s" label="DENUM" value={uiData.groupC.denum} icon={<IconDenum/>} />
+                          <ResultCard delay="0.35s" label="Part de Marché" value={`${uiData.groupC.partDeMarche || 0}%`} icon={<IconPie/>} />
                           <ResultCard delay="0.4s" highlight={true} label="Taux" value={`${uiData.groupC.resultat}%`} icon={<IconResult/>} />
                         </div>
                       </div>

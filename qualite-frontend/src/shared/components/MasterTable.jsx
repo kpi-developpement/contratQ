@@ -5,9 +5,7 @@ import styles from "../styles/table.module.css";
 export default function MasterTable({ data, activeModule }) {
   if (!data) return null;
 
-  // Function bach n3rfo wach data fiha Multi-Group wla Single
   const isMultiGroup = data.groupA !== undefined;
-
   let tableRows = [];
 
   if (isMultiGroup) {
@@ -30,10 +28,12 @@ export default function MasterTable({ data, activeModule }) {
     ];
   }
 
-  // Calcul du Total Global ila kanou Multi-groups
   const totalNum = isMultiGroup ? tableRows.reduce((acc, row) => acc + row.data.num, 0) : data.num;
   const totalDenum = isMultiGroup ? tableRows.reduce((acc, row) => acc + row.data.denum, 0) : data.denum;
   const totalResultat = totalDenum > 0 ? ((totalNum / totalDenum) * 100).toFixed(2) : "0.00";
+  
+  // Total Part de marché dima khasso ykoun 100% (ola 0 ila makanch)
+  const totalPart = totalDenum > 0 ? "100.00" : "0.00";
 
   return (
     <div className={styles.tableWrapper}>
@@ -49,6 +49,7 @@ export default function MasterTable({ data, activeModule }) {
               <th>Indicateur / Groupe</th>
               <th className={styles.numCol}>Numérateur (NUM)</th>
               <th className={styles.denumCol}>Dénominateur (DENUM)</th>
+              {isMultiGroup && <th className={styles.denumCol}>Part de Marché</th>}
               <th className={styles.resultCol}>Taux de Réussite (%)</th>
             </tr>
           </thead>
@@ -61,6 +62,15 @@ export default function MasterTable({ data, activeModule }) {
                 </td>
                 <td className={styles.numCol}>{row.data.num.toLocaleString()}</td>
                 <td className={styles.denumCol}>{row.data.denum.toLocaleString()}</td>
+                
+                {isMultiGroup && (
+                  <td className={styles.denumCol}>
+                    <span style={{color: '#8b5cf6', fontWeight: 'bold', background: 'rgba(139, 92, 246, 0.1)', padding: '6px 12px', borderRadius: '10px'}}>
+                      {row.data.partDeMarche || 0}%
+                    </span>
+                  </td>
+                )}
+
                 <td className={styles.resultCol}>
                   <span className={styles.percentageBadge}>
                     {row.data.resultat}%
@@ -75,6 +85,9 @@ export default function MasterTable({ data, activeModule }) {
                 <td className={styles.totalLabel}>TOTAL GLOBAL</td>
                 <td className={styles.numCol}>{totalNum.toLocaleString()}</td>
                 <td className={styles.denumCol}>{totalDenum.toLocaleString()}</td>
+                <td className={styles.denumCol}>
+                  <span style={{color: '#8b5cf6', fontWeight: '900'}}>{totalPart}%</span>
+                </td>
                 <td className={styles.resultCol}>
                   <span className={`${styles.percentageBadge} ${styles.totalBadge}`}>
                     {totalResultat}%
