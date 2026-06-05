@@ -6,8 +6,6 @@ export default function MasterTable({ data, activeModule }) {
   if (!data) return null;
 
   const isMultiGroup = data.groupA !== undefined;
-  
-  // Nchoufo wach had l'module fih l'bonus (Ghir RANG 1)
   const isBonusActive = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1"].includes(activeModule);
 
   let tableRows = [];
@@ -32,61 +30,59 @@ export default function MasterTable({ data, activeModule }) {
     ];
   }
 
-  // Les Totaux
+  // Calcul des Totaux Globaux
   const totalNum = isMultiGroup ? tableRows.reduce((acc, row) => acc + row.data.num, 0) : data.num;
   const totalDenum = isMultiGroup ? tableRows.reduce((acc, row) => acc + row.data.denum, 0) : data.denum;
   const totalResultat = totalDenum > 0 ? ((totalNum / totalDenum) * 100).toFixed(2) : "0.00";
   const totalPart = totalDenum > 0 ? "100.00" : "0.00";
-  
-  // Total Bonus (Bima ana l'Backend kiderbou f Part de marché, jm3hom kaye3ti l'Total S7i7!)
   const totalBonus = isBonusActive ? tableRows.reduce((acc, row) => acc + (row.data.bonus || 0), 0).toFixed(2) : "0.00";
 
   return (
-    <div className={styles.tableWrapper}>
+    <div className={styles.tableWrapper} style={{ marginTop: '30px' }}>
       <div className={styles.tableHeader}>
-        <h3 className={styles.tableTitle}>Synthèse Globale</h3>
+        <h3 className={styles.tableTitle}>Synthèse Globale - {activeModule?.replace(/_/g, ' ')}</h3>
         <span className={styles.tableBadge}>DATA VERIFIED</span>
       </div>
 
       <div className={styles.tableContainer}>
-        <table className={styles.premiumTable}>
+        <table className={styles.premiumTable} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center' }}>
           <thead>
-            <tr>
-              <th>Indicateur / Groupe</th>
-              <th className={styles.numCol}>Numérateur (NUM)</th>
-              <th className={styles.denumCol}>Dénominateur (DENUM)</th>
-              {isMultiGroup && <th className={styles.denumCol}>Part de Marché</th>}
-              <th className={styles.resultCol}>Taux de Réussite</th>
-              {isBonusActive && <th className={styles.resultCol}>Bonus Gagné (Max 4%)</th>}
+            <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+              <th style={{ padding: '15px', textAlign: 'left', color: '#475569' }}>Indicateur / Groupe</th>
+              <th style={{ padding: '15px', color: '#475569' }}>Numérateur (NUM)</th>
+              <th style={{ padding: '15px', color: '#475569' }}>Dénominateur (DENUM)</th>
+              {isMultiGroup && <th style={{ padding: '15px', color: '#8b5cf6' }}>Part de Marché</th>}
+              <th style={{ padding: '15px', color: '#10b981' }}>Taux de Réussite</th>
+              {isBonusActive && <th style={{ padding: '15px', color: '#F59E0B' }}>Bonus Gagné (Max 4%)</th>}
             </tr>
           </thead>
           <tbody>
             {tableRows.map((row, index) => (
-              <tr key={row.id} style={{ animationDelay: `${index * 0.1}s` }}>
-                <td className={styles.rowLabel}>
-                  <div className={styles.labelIndicator}></div>
+              <tr key={row.id} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.2s', animationDelay: `${index * 0.1}s` }}>
+                <td style={{ padding: '15px', textAlign: 'left', fontWeight: 'bold', color: '#1e293b' }}>
+                  <div style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#3b82f6', marginRight: '10px' }}></div>
                   {row.label}
                 </td>
-                <td className={styles.numCol}>{row.data.num.toLocaleString()}</td>
-                <td className={styles.denumCol}>{row.data.denum.toLocaleString()}</td>
+                <td style={{ padding: '15px', color: '#64748b', fontWeight: '500' }}>{row.data.num.toLocaleString()}</td>
+                <td style={{ padding: '15px', color: '#64748b', fontWeight: '500' }}>{row.data.denum.toLocaleString()}</td>
                 
                 {isMultiGroup && (
-                  <td className={styles.denumCol}>
-                    <span style={{color: '#8b5cf6', fontWeight: 'bold', background: 'rgba(139, 92, 246, 0.1)', padding: '6px 12px', borderRadius: '10px'}}>
+                  <td style={{ padding: '15px' }}>
+                    <span style={{ color: '#8b5cf6', fontWeight: 'bold', backgroundColor: 'rgba(139, 92, 246, 0.1)', padding: '6px 12px', borderRadius: '8px', display: 'inline-block', minWidth: '70px' }}>
                       {row.data.partDeMarche || 0}%
                     </span>
                   </td>
                 )}
 
-                <td className={styles.resultCol}>
-                  <span className={styles.percentageBadge}>
+                <td style={{ padding: '15px' }}>
+                  <span style={{ color: '#10b981', fontWeight: 'bold', backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '6px 12px', borderRadius: '8px', display: 'inline-block', minWidth: '70px' }}>
                     {row.data.resultat}%
                   </span>
                 </td>
 
                 {isBonusActive && (
-                  <td className={styles.resultCol}>
-                    <span style={{color: '#F59E0B', fontWeight: '900', background: 'rgba(245, 158, 11, 0.1)', padding: '6px 12px', borderRadius: '10px', border: '1px solid rgba(245, 158, 11, 0.3)'}}>
+                  <td style={{ padding: '15px' }}>
+                    <span style={{ color: '#F59E0B', fontWeight: '900', backgroundColor: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '6px 12px', borderRadius: '8px', display: 'inline-block', minWidth: '80px' }}>
                       + {row.data.bonus || 0}%
                     </span>
                   </td>
@@ -96,21 +92,21 @@ export default function MasterTable({ data, activeModule }) {
           </tbody>
           {isMultiGroup && (
             <tfoot>
-              <tr>
-                <td className={styles.totalLabel}>TOTAL GLOBAL</td>
-                <td className={styles.numCol}>{totalNum.toLocaleString()}</td>
-                <td className={styles.denumCol}>{totalDenum.toLocaleString()}</td>
-                <td className={styles.denumCol}>
-                  <span style={{color: '#8b5cf6', fontWeight: '900'}}>{totalPart}%</span>
+              <tr style={{ backgroundColor: '#f8fafc', borderTop: '2px solid #e2e8f0', fontWeight: 'bold' }}>
+                <td style={{ padding: '18px', textAlign: 'left', color: '#0f172a' }}>TOTAL GLOBAL</td>
+                <td style={{ padding: '18px', color: '#0f172a' }}>{totalNum.toLocaleString()}</td>
+                <td style={{ padding: '18px', color: '#0f172a' }}>{totalDenum.toLocaleString()}</td>
+                <td style={{ padding: '18px' }}>
+                  <span style={{ color: '#8b5cf6', fontWeight: '900' }}>{totalPart}%</span>
                 </td>
-                <td className={styles.resultCol}>
-                  <span className={`${styles.percentageBadge} ${styles.totalBadge}`}>
+                <td style={{ padding: '18px' }}>
+                  <span style={{ color: '#fff', backgroundColor: '#10b981', padding: '8px 16px', borderRadius: '8px', boxShadow: '0 4px 10px rgba(16, 185, 129, 0.3)' }}>
                     {totalResultat}%
                   </span>
                 </td>
                 {isBonusActive && (
-                  <td className={styles.resultCol}>
-                    <span style={{color: '#fff', background: 'linear-gradient(135deg, #F59E0B, #D97706)', padding: '8px 16px', borderRadius: '12px', fontWeight: '900', boxShadow: '0 4px 15px rgba(245, 158, 11, 0.4)'}}>
+                  <td style={{ padding: '18px' }}>
+                    <span style={{ color: '#fff', background: 'linear-gradient(135deg, #F59E0B, #D97706)', padding: '8px 16px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.4)' }}>
                       + {totalBonus}%
                     </span>
                   </td>
