@@ -14,12 +14,14 @@ const API_ENDPOINTS_FICHIER_1 = {
   TAUX_20J: "/api/v1/excel/taux20j/analyze",
 };
 
-// ZEDNA RANG 2 F L'CONFIG INITIALE
+// INITIAL CONFIG B L'ZOUZ (Fichier 2 w Fichier 1)
 const INITIAL_CONFIG = {
   plp: { a: { min: 93.0, max: 98.0 }, b: { min: 90.0, max: 96.0 }, c: { min: 86.0, max: 95.0 } },
   hotline: { a: { min: 84.0, max: 91.0 }, b: { min: 77.0, max: 88.0 }, c: { min: 76.0, max: 83.0 } },
   construction: { a: { min: 78.0, max: 86.0 }, b: { min: 74.0, max: 84.0 }, c: { min: 68.0, max: 78.0 } },
-  rang2: { a: { min: 67.0, max: 72.0 }, b: { min: 63.0, max: 68.0 }, c: { min: 57.0, max: 63.0 } }
+  rang2: { a: { min: 67.0, max: 72.0 }, b: { min: 63.0, max: 68.0 }, c: { min: 57.0, max: 63.0 } },
+  sacli: { min: 80.0, max: 95.0, bonusMax: 2.0 },
+  sarcli: { min: 30.0, max: 55.0, bonusMax: 1.0 }
 };
 
 export default function UnifiedUploader() {
@@ -59,9 +61,8 @@ export default function UnifiedUploader() {
   const isFichier2Group = !isFichier1Group && !isFichier3Group;
   
   const isMultiGroup = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1", "PERF_RANG_2"].includes(activeModule);
-  
-  // ZEDNA PERF_RANG_2 HNA ACH YBAN FIH L'BONUS!
-  const isBonusActive = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1", "PERF_RANG_2"].includes(activeModule);
+  // ZEDNA SACLI W SARCLI F IS BONUS ACTIVE
+  const isBonusActive = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1", "PERF_RANG_2", "SACLI_OK", "SARCLI_NOK"].includes(activeModule);
 
   const getCurrentResult = () => {
     if (!activeModule) return null;
@@ -95,6 +96,13 @@ export default function UnifiedUploader() {
         ...prev[process],
         [zone]: { ...prev[process][zone], [minOrMax]: parseFloat(value) || 0 }
       }
+    }));
+  };
+
+  const handleSingleConfigChange = (process, key, value) => {
+    setBonusConfig(prev => ({
+      ...prev,
+      [process]: { ...prev[process], [key]: parseFloat(value) || 0 }
     }));
   };
 
@@ -143,7 +151,9 @@ export default function UnifiedUploader() {
 
     const formData = new FormData(); 
     formData.append('file', fileToUpload);
-    if (isFichier2Group) {
+    
+    // NSIFTOU L'CONFIG DIMA (Ila Backend braha ayakhdha, wla ykhelliha)
+    if (isFichier2Group || activeModule === "SACLI_OK" || activeModule === "SARCLI_NOK") {
       formData.append('config', JSON.stringify(bonusConfig));
     }
 
@@ -188,7 +198,7 @@ export default function UnifiedUploader() {
   const formatDataForUI = () => {
     const raw = currentResult?.data;
     if (!raw) return null;
-    if (!isMultiGroup) return raw;
+    if (!isMultiGroup) return raw; // Fichier 1 raw data is directly used
     return {
       groupA: raw.groupA || { num: 0, denum: 0, resultat: 0, partDeMarche: 0, bonus: 0 },
       groupB: raw.groupB || { num: 0, denum: 0, resultat: 0, partDeMarche: 0, bonus: 0 },
@@ -197,26 +207,36 @@ export default function UnifiedUploader() {
   };
 
   const uiData = formatDataForUI();
-  const gridClass = isBonusActive ? "grid5" : "grid4";
 
   return (
     <>
       <style dangerouslySetInnerHTML={{__html: `
         body, html { background-color: #ffffff !important; margin: 0; padding: 0; overflow-x: hidden; overflow-y: auto !important; }
         canvas { position: fixed !important; top: 0; left: 0; z-index: -1; }
+        
         .grid4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 15px; }
         .grid5 { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-top: 15px; }
         
+        /* Premium Settings Panel Styles */
         .configPanel { 
-          background: #ffffff; 
-          border: 1px solid #e2e8f0; 
+          background: rgba(255, 255, 255, 0.9); 
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(226, 232, 240, 0.8); 
           border-radius: 12px; 
           padding: 24px; 
           margin-bottom: 24px;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
           animation: slideDown 0.3s ease-out;
         }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Gold Pulse Animation for Bonus */
+        @keyframes goldPulse {
+          0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+          70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+        .gold-pulse-bg { animation: goldPulse 2s infinite; }
         
         .configTable { width: 100%; border-collapse: separate; border-spacing: 0 10px; text-align: center; }
         .configTable th { padding: 10px; font-size: 13px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #f1f5f9; }
@@ -297,19 +317,17 @@ export default function UnifiedUploader() {
               {!currentResult && (
                 <div className={styles.uploadSection}>
                   
-                  {isFichier2Group && (
+                  {/* PANEL DE CONFIGURATION DYNAMIQUE (CONTEXT-AWARE) */}
+                  {(isFichier2Group || activeModule === 'SACLI_OK' || activeModule === 'SARCLI_NOK') && (
                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '15px' }}>
-                      <button 
-                        onClick={() => setShowConfigPanel(!showConfigPanel)}
-                        className={`configBtn ${showConfigPanel ? 'active' : ''}`}
-                      >
+                      <button onClick={() => setShowConfigPanel(!showConfigPanel)} className={`configBtn ${showConfigPanel ? 'active' : ''}`}>
                         <span style={{ width: '18px', display: 'flex' }}><IconSettings/></span>
                         {showConfigPanel ? 'Fermer les paramètres' : '⚙️ Paramétrer les Bonus'}
                       </button>
                     </div>
                   )}
 
-                  {showConfigPanel && isFichier2Group && (
+                  {showConfigPanel && (isFichier2Group || activeModule === 'SACLI_OK' || activeModule === 'SARCLI_NOK') && (
                     <div className="configPanel">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
                         <div style={{ padding: '8px', background: '#eff6ff', borderRadius: '8px', color: '#3b82f6' }}>
@@ -318,35 +336,51 @@ export default function UnifiedUploader() {
                         <h4 style={{ margin: 0, color: '#0f172a', fontSize: '1.1rem' }}>Ajustement Dynamique des Seuils (%)</h4>
                       </div>
                       
-                      <table className="configTable">
-                        <thead>
-                          <tr>
-                            <th style={{ textAlign: 'left' }}>Processus</th>
-                            <th colSpan="2" style={{ color: '#3b82f6' }}>ZONE A</th>
-                            <th colSpan="2" style={{ color: '#8b5cf6' }}>ZONE B</th>
-                            <th colSpan="2" style={{ color: '#10b981' }}>ZONE C</th>
-                          </tr>
-                          <tr>
-                            <th></th>
-                            <th>MIN</th><th>MAX</th>
-                            <th>MIN</th><th>MAX</th>
-                            <th>MIN</th><th>MAX</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {['plp', 'hotline', 'construction', 'rang2'].map((process, idx) => (
-                            <tr key={process} style={{ background: idx % 2 === 0 ? '#fff' : '#f8fafc', borderRadius: '8px' }}>
-                              <td style={{ fontWeight: '800', textTransform: 'uppercase', color: '#334155', textAlign: 'left', paddingLeft: '15px' }}>{process === 'rang2' ? 'GLOBAL RANG 2' : process}</td>
-                              {['a', 'b', 'c'].map(zone => (
-                                <React.Fragment key={`${process}-${zone}`}>
-                                  <td><input type="number" step="0.1" className="configInput" value={bonusConfig[process][zone].min} onChange={(e) => handleConfigChange(process, zone, 'min', e.target.value)} /></td>
-                                  <td><input type="number" step="0.1" className="configInput" value={bonusConfig[process][zone].max} onChange={(e) => handleConfigChange(process, zone, 'max', e.target.value)} /></td>
-                                </React.Fragment>
-                              ))}
+                      {isFichier2Group && (
+                        <table className="configTable">
+                          <thead>
+                            <tr>
+                              <th style={{ textAlign: 'left' }}>Processus</th>
+                              <th colSpan="2" style={{ color: '#3b82f6' }}>ZONE A</th>
+                              <th colSpan="2" style={{ color: '#8b5cf6' }}>ZONE B</th>
+                              <th colSpan="2" style={{ color: '#10b981' }}>ZONE C</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                            <tr>
+                              <th></th><th>MIN</th><th>MAX</th><th>MIN</th><th>MAX</th><th>MIN</th><th>MAX</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {['plp', 'hotline', 'construction', 'rang2'].map((process, idx) => (
+                              <tr key={process} style={{ background: idx % 2 === 0 ? '#fff' : '#f8fafc', borderRadius: '8px' }}>
+                                <td style={{ fontWeight: '800', textTransform: 'uppercase', color: '#334155', textAlign: 'left', paddingLeft: '15px' }}>{process === 'rang2' ? 'GLOBAL RANG 2' : process}</td>
+                                {['a', 'b', 'c'].map(zone => (
+                                  <React.Fragment key={`${process}-${zone}`}>
+                                    <td><input type="number" step="0.1" className="configInput" value={bonusConfig[process][zone].min} onChange={(e) => handleConfigChange(process, zone, 'min', e.target.value)} /></td>
+                                    <td><input type="number" step="0.1" className="configInput" value={bonusConfig[process][zone].max} onChange={(e) => handleConfigChange(process, zone, 'max', e.target.value)} /></td>
+                                  </React.Fragment>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+
+                      {(activeModule === 'SACLI_OK' || activeModule === 'SARCLI_NOK') && (
+                        <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
+                          <div style={{ textAlign: 'center' }}>
+                            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginBottom: '8px' }}>Point MIN</label>
+                            <input type="number" step="0.1" className="configInput" value={activeModule === 'SACLI_OK' ? bonusConfig.sacli.min : bonusConfig.sarcli.min} onChange={(e) => handleSingleConfigChange(activeModule === 'SACLI_OK' ? 'sacli' : 'sarcli', 'min', e.target.value)} />
+                          </div>
+                          <div style={{ textAlign: 'center' }}>
+                            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginBottom: '8px' }}>Point MAX</label>
+                            <input type="number" step="0.1" className="configInput" value={activeModule === 'SACLI_OK' ? bonusConfig.sacli.max : bonusConfig.sarcli.max} onChange={(e) => handleSingleConfigChange(activeModule === 'SACLI_OK' ? 'sacli' : 'sarcli', 'max', e.target.value)} />
+                          </div>
+                          <div style={{ textAlign: 'center' }}>
+                            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#F59E0B', marginBottom: '8px' }}>Bonus MAX</label>
+                            <input type="number" step="0.1" className="configInput" style={{ borderColor: '#F59E0B', color: '#F59E0B' }} value={activeModule === 'SACLI_OK' ? bonusConfig.sacli.bonusMax : bonusConfig.sarcli.bonusMax} onChange={(e) => handleSingleConfigChange(activeModule === 'SACLI_OK' ? 'sacli' : 'sarcli', 'bonusMax', e.target.value)} />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -423,7 +457,7 @@ export default function UnifiedUploader() {
                     <div className={styles.multiGroupResult}>
                       <div className={styles.groupContainer}>
                         <h4 className={styles.groupTitle}>Groupe A ({getZoneLabel('A')})</h4>
-                        <div className={gridClass}>
+                        <div className={isBonusActive ? "grid5" : "grid4"}>
                           <ResultCard delay="0s" label="NUM" value={uiData.groupA.num} icon={<IconNum/>} />
                           <ResultCard delay="0.1s" label="DENUM" value={uiData.groupA.denum} icon={<IconDenum/>} />
                           <ResultCard delay="0.15s" label="Part (Poids)" value={`${uiData.groupA.partDeMarche || 0}%`} icon={<IconPie/>} />
@@ -433,7 +467,7 @@ export default function UnifiedUploader() {
                       </div>
                       <div className={styles.groupContainer}>
                         <h4 className={styles.groupTitle}>Groupe B ({getZoneLabel('B')})</h4>
-                        <div className={gridClass}>
+                        <div className={isBonusActive ? "grid5" : "grid4"}>
                           <ResultCard delay="0.1s" label="NUM" value={uiData.groupB.num} icon={<IconNum/>} />
                           <ResultCard delay="0.2s" label="DENUM" value={uiData.groupB.denum} icon={<IconDenum/>} />
                           <ResultCard delay="0.25s" label="Part (Poids)" value={`${uiData.groupB.partDeMarche || 0}%`} icon={<IconPie/>} />
@@ -443,7 +477,7 @@ export default function UnifiedUploader() {
                       </div>
                       <div className={styles.groupContainer}>
                         <h4 className={styles.groupTitle}>Groupe C ({getZoneLabel('C')})</h4>
-                        <div className={gridClass}>
+                        <div className={isBonusActive ? "grid5" : "grid4"}>
                           <ResultCard delay="0.2s" label="NUM" value={uiData.groupC.num} icon={<IconNum/>} />
                           <ResultCard delay="0.3s" label="DENUM" value={uiData.groupC.denum} icon={<IconDenum/>} />
                           <ResultCard delay="0.35s" label="Part (Poids)" value={`${uiData.groupC.partDeMarche || 0}%`} icon={<IconPie/>} />
@@ -453,10 +487,11 @@ export default function UnifiedUploader() {
                       </div>
                     </div>
                   ) : (
-                    <div className={styles.resultGrid}>
+                    <div className={isBonusActive ? "grid4" : "grid3"} style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(200px, 1fr))`, gap: '16px' }}>
                       <ResultCard delay="0s" label="Numérateur (NUM)" value={uiData.num} icon={<IconNum/>} />
                       <ResultCard delay="0.1s" label="Dénominateur (DENUM)" value={uiData.denum} icon={<IconDenum/>} />
                       <ResultCard delay="0.2s" highlight={true} label="Taux de réussite" value={`${uiData.resultat}%`} icon={<IconResult/>} />
+                      {isBonusActive && <ResultCard delay="0.3s" highlight={true} label="Bonus Gagné" value={`+${uiData.bonus || 0}%`} icon={<IconBonus/>} />}
                     </div>
                   )}
 

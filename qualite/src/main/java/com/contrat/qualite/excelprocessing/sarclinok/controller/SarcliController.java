@@ -16,12 +16,11 @@ public class SarcliController {
     private final SarcliService sarcliService;
 
     @PostMapping("/analyze")
-    public ResponseEntity<SarcliResultDto> analyzeSarcliExcel(@RequestParam("file") MultipartFile file) {
-        if (file.isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
+    public ResponseEntity<SarcliResultDto> analyzeSarcliExcel(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "config", required = false) String configJson) {
 
-        SarcliResultDto result = sarcliService.processSarcliExcel(file);
-        return ResponseEntity.ok(result);
+        if (file.isEmpty()) return ResponseEntity.badRequest().build();
+        return ResponseEntity.ok(sarcliService.processSarcliExcel(file, configJson));
     }
 }
