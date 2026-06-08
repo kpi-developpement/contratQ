@@ -13,5 +13,6 @@ public class PerfRang2GroupDto {
     private long num;
     private long denum;
     private double resultat;
-    private double partDeMarche; // <-- ZEDNA HADI
+    private double partDeMarche;
+    private double bonus; // <-- L'BONUS TZAD HNA
 }

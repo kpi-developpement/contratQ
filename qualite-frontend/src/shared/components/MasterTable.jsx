@@ -6,7 +6,9 @@ export default function MasterTable({ data, activeModule }) {
   if (!data) return null;
 
   const isMultiGroup = data.groupA !== undefined;
-  const isBonusActive = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1"].includes(activeModule);
+  
+  // ZEDNA PERF_RANG_2 HNA!
+  const isBonusActive = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1", "PERF_RANG_2"].includes(activeModule);
 
   let tableRows = [];
 
@@ -30,7 +32,6 @@ export default function MasterTable({ data, activeModule }) {
     ];
   }
 
-  // Calcul des Totaux Globaux
   const totalNum = isMultiGroup ? tableRows.reduce((acc, row) => acc + row.data.num, 0) : data.num;
   const totalDenum = isMultiGroup ? tableRows.reduce((acc, row) => acc + row.data.denum, 0) : data.denum;
   const totalResultat = totalDenum > 0 ? ((totalNum / totalDenum) * 100).toFixed(2) : "0.00";

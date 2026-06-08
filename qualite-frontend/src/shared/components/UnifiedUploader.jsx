@@ -14,11 +14,12 @@ const API_ENDPOINTS_FICHIER_1 = {
   TAUX_20J: "/api/v1/excel/taux20j/analyze",
 };
 
-// L'Etat Initial dyal les Barèmes Dynamiques
+// ZEDNA RANG 2 F L'CONFIG INITIALE
 const INITIAL_CONFIG = {
   plp: { a: { min: 93.0, max: 98.0 }, b: { min: 90.0, max: 96.0 }, c: { min: 86.0, max: 95.0 } },
   hotline: { a: { min: 84.0, max: 91.0 }, b: { min: 77.0, max: 88.0 }, c: { min: 76.0, max: 83.0 } },
-  construction: { a: { min: 78.0, max: 86.0 }, b: { min: 74.0, max: 84.0 }, c: { min: 68.0, max: 78.0 } }
+  construction: { a: { min: 78.0, max: 86.0 }, b: { min: 74.0, max: 84.0 }, c: { min: 68.0, max: 78.0 } },
+  rang2: { a: { min: 67.0, max: 72.0 }, b: { min: 63.0, max: 68.0 }, c: { min: 57.0, max: 63.0 } }
 };
 
 export default function UnifiedUploader() {
@@ -35,7 +36,6 @@ export default function UnifiedUploader() {
   const [error, setError] = useState("");
   const fileInputRef = useRef(null);
 
-  // States Jdad dyal Paramétrage
   const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [bonusConfig, setBonusConfig] = useState(INITIAL_CONFIG);
 
@@ -59,7 +59,9 @@ export default function UnifiedUploader() {
   const isFichier2Group = !isFichier1Group && !isFichier3Group;
   
   const isMultiGroup = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1", "PERF_RANG_2"].includes(activeModule);
-  const isBonusActive = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1"].includes(activeModule);
+  
+  // ZEDNA PERF_RANG_2 HNA ACH YBAN FIH L'BONUS!
+  const isBonusActive = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1", "PERF_RANG_2"].includes(activeModule);
 
   const getCurrentResult = () => {
     if (!activeModule) return null;
@@ -86,7 +88,6 @@ export default function UnifiedUploader() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // Logique bach ymodifi l'Object State s7i7
   const handleConfigChange = (process, zone, minOrMax, value) => {
     setBonusConfig(prev => ({
       ...prev,
@@ -142,7 +143,6 @@ export default function UnifiedUploader() {
 
     const formData = new FormData(); 
     formData.append('file', fileToUpload);
-    // KANSFTOU L'CONFIG JSON L'BACKEND
     if (isFichier2Group) {
       formData.append('config', JSON.stringify(bonusConfig));
     }
@@ -170,7 +170,6 @@ export default function UnifiedUploader() {
     finally { setLoading(false); }
   };
 
-  // Les Icones Modernes
   const IconNum = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>;
   const IconDenum = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>;
   const IconPie = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>;
@@ -198,8 +197,6 @@ export default function UnifiedUploader() {
   };
 
   const uiData = formatDataForUI();
-  
-  // Classe d'affichage dynamique (4 colonnes vs 5 colonnes)
   const gridClass = isBonusActive ? "grid5" : "grid4";
 
   return (
@@ -207,11 +204,9 @@ export default function UnifiedUploader() {
       <style dangerouslySetInnerHTML={{__html: `
         body, html { background-color: #ffffff !important; margin: 0; padding: 0; overflow-x: hidden; overflow-y: auto !important; }
         canvas { position: fixed !important; top: 0; left: 0; z-index: -1; }
-        
         .grid4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 15px; }
         .grid5 { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-top: 15px; }
         
-        /* Premium Settings Panel Styles */
         .configPanel { 
           background: #ffffff; 
           border: 1px solid #e2e8f0; 
@@ -238,19 +233,8 @@ export default function UnifiedUploader() {
           background: #f8fafc;
           transition: all 0.2s ease;
         }
-        .configInput:focus { 
-          outline: none; 
-          border-color: #3b82f6; 
-          background: #fff;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); 
-        }
-        .configBtn {
-          display: flex; alignItems: center; gap: 8px; 
-          background: #ffffff; border: 1px solid #cbd5e1; 
-          padding: 10px 20px; border-radius: 8px; 
-          cursor: pointer; color: #334155; font-weight: 600;
-          transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-        }
+        .configInput:focus { outline: none; border-color: #3b82f6; background: #fff; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
+        .configBtn { display: flex; alignItems: center; gap: 8px; background: #ffffff; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 8px; cursor: pointer; color: #334155; font-weight: 600; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
         .configBtn:hover { background: #f8fafc; border-color: #94a3b8; transform: translateY(-1px); }
         .configBtn.active { background: #eff6ff; border-color: #3b82f6; color: #2563eb; }
       `}} />
@@ -313,7 +297,6 @@ export default function UnifiedUploader() {
               {!currentResult && (
                 <div className={styles.uploadSection}>
                   
-                  {/* PANEL DE CONFIGURATION DYNAMIQUE */}
                   {isFichier2Group && (
                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '15px' }}>
                       <button 
@@ -351,9 +334,9 @@ export default function UnifiedUploader() {
                           </tr>
                         </thead>
                         <tbody>
-                          {['plp', 'hotline', 'construction'].map((process, idx) => (
+                          {['plp', 'hotline', 'construction', 'rang2'].map((process, idx) => (
                             <tr key={process} style={{ background: idx % 2 === 0 ? '#fff' : '#f8fafc', borderRadius: '8px' }}>
-                              <td style={{ fontWeight: '800', textTransform: 'uppercase', color: '#334155', textAlign: 'left', paddingLeft: '15px' }}>{process}</td>
+                              <td style={{ fontWeight: '800', textTransform: 'uppercase', color: '#334155', textAlign: 'left', paddingLeft: '15px' }}>{process === 'rang2' ? 'GLOBAL RANG 2' : process}</td>
                               {['a', 'b', 'c'].map(zone => (
                                 <React.Fragment key={`${process}-${zone}`}>
                                   <td><input type="number" step="0.1" className="configInput" value={bonusConfig[process][zone].min} onChange={(e) => handleConfigChange(process, zone, 'min', e.target.value)} /></td>
@@ -391,7 +374,7 @@ export default function UnifiedUploader() {
                               <line x1="12" y1="3" x2="12" y2="15"></line>
                             </svg>
                           </div>
-                          <h3>Injecter le fichier ({modules[activeModule]?.label})</h3>
+                          <h3>Injecter le fichier spécifique ({modules[activeModule]?.label})</h3>
                           <p>Formats supportés : CSV, XLSX, XLS</p>
                         </div>
                       </div>
@@ -443,7 +426,7 @@ export default function UnifiedUploader() {
                         <div className={gridClass}>
                           <ResultCard delay="0s" label="NUM" value={uiData.groupA.num} icon={<IconNum/>} />
                           <ResultCard delay="0.1s" label="DENUM" value={uiData.groupA.denum} icon={<IconDenum/>} />
-                          <ResultCard delay="0.15s" label="Part de Marché" value={`${uiData.groupA.partDeMarche || 0}%`} icon={<IconPie/>} />
+                          <ResultCard delay="0.15s" label="Part (Poids)" value={`${uiData.groupA.partDeMarche || 0}%`} icon={<IconPie/>} />
                           <ResultCard delay="0.2s" highlight={true} label="Taux" value={`${uiData.groupA.resultat}%`} icon={<IconResult/>} />
                           {isBonusActive && <ResultCard delay="0.25s" highlight={true} label="Bonus Gagné" value={`+${uiData.groupA.bonus || 0}%`} icon={<IconBonus/>} />}
                         </div>
@@ -453,7 +436,7 @@ export default function UnifiedUploader() {
                         <div className={gridClass}>
                           <ResultCard delay="0.1s" label="NUM" value={uiData.groupB.num} icon={<IconNum/>} />
                           <ResultCard delay="0.2s" label="DENUM" value={uiData.groupB.denum} icon={<IconDenum/>} />
-                          <ResultCard delay="0.25s" label="Part de Marché" value={`${uiData.groupB.partDeMarche || 0}%`} icon={<IconPie/>} />
+                          <ResultCard delay="0.25s" label="Part (Poids)" value={`${uiData.groupB.partDeMarche || 0}%`} icon={<IconPie/>} />
                           <ResultCard delay="0.3s" highlight={true} label="Taux" value={`${uiData.groupB.resultat}%`} icon={<IconResult/>} />
                           {isBonusActive && <ResultCard delay="0.35s" highlight={true} label="Bonus Gagné" value={`+${uiData.groupB.bonus || 0}%`} icon={<IconBonus/>} />}
                         </div>
@@ -463,7 +446,7 @@ export default function UnifiedUploader() {
                         <div className={gridClass}>
                           <ResultCard delay="0.2s" label="NUM" value={uiData.groupC.num} icon={<IconNum/>} />
                           <ResultCard delay="0.3s" label="DENUM" value={uiData.groupC.denum} icon={<IconDenum/>} />
-                          <ResultCard delay="0.35s" label="Part de Marché" value={`${uiData.groupC.partDeMarche || 0}%`} icon={<IconPie/>} />
+                          <ResultCard delay="0.35s" label="Part (Poids)" value={`${uiData.groupC.partDeMarche || 0}%`} icon={<IconPie/>} />
                           <ResultCard delay="0.4s" highlight={true} label="Taux" value={`${uiData.groupC.resultat}%`} icon={<IconResult/>} />
                           {isBonusActive && <ResultCard delay="0.45s" highlight={true} label="Bonus Gagné" value={`+${uiData.groupC.bonus || 0}%`} icon={<IconBonus/>} />}
                         </div>

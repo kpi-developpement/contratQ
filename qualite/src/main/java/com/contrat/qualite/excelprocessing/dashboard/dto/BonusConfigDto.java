@@ -13,6 +13,7 @@ public class BonusConfigDto {
     private ZoneConfig plp;
     private ZoneConfig hotline;
     private ZoneConfig construction;
+    private ZoneConfig rang2; // <-- RANG 2 TZAD HNA
 
     @Data
     @NoArgsConstructor

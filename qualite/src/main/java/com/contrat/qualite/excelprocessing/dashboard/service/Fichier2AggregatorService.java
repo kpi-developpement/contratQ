@@ -35,7 +35,6 @@ public class Fichier2AggregatorService {
         long cNumA = 0, cDenA = 0, cNumB = 0, cDenB = 0, cNumC = 0, cDenC = 0;
         long p2NumA = 0, p2DenA = 0, p2NumB = 0, p2DenB = 0, p2NumC = 0, p2DenC = 0;
 
-        // Extraction dyal l'Config Dynamique ola Default Values
         BonusConfigDto config = parseConfigOrDefault(configJson);
 
         CSVFormat format = CSVFormat.Builder.create()
@@ -134,18 +133,14 @@ public class Fichier2AggregatorService {
                         buildConstructionGroup(cNumC, cDenC, totalDenumRang1, config.getConstruction().getC().getMin(), config.getConstruction().getC().getMax())
                 ))
 
-                // FIX HNA: RANG 2 KANPASSILOU GHER 4 ARGUMENTS BLA BONUS BLA MIN/MAX
+                // RANG 2 DBA FIH L'BONUS!
                 .perfRang2(new PerfRang2ResultDto(
-                        new PerfRang2GroupDto(p2NumA, p2DenA, calc(p2NumA, p2DenA), calcPart(p2DenA, totalDenumRang2)),
-                        new PerfRang2GroupDto(p2NumB, p2DenB, calc(p2NumB, p2DenB), calcPart(p2DenB, totalDenumRang2)),
-                        new PerfRang2GroupDto(p2NumC, p2DenC, calc(p2NumC, p2DenC), calcPart(p2DenC, totalDenumRang2))
+                        buildPerfRang2Group(p2NumA, p2DenA, totalDenumRang2, config.getRang2().getA().getMin(), config.getRang2().getA().getMax()),
+                        buildPerfRang2Group(p2NumB, p2DenB, totalDenumRang2, config.getRang2().getB().getMin(), config.getRang2().getB().getMax()),
+                        buildPerfRang2Group(p2NumC, p2DenC, totalDenumRang2, config.getRang2().getC().getMin(), config.getRang2().getC().getMax())
                 ))
                 .build();
     }
-
-    // ==========================================
-    // HELPERS & CONFIG PARSER
-    // ==========================================
 
     private BonusConfigDto parseConfigOrDefault(String configJson) {
         if (configJson != null && !configJson.isEmpty()) {
@@ -171,6 +166,11 @@ public class Fichier2AggregatorService {
                         new BonusConfigDto.MinMax(78.0, 86.0),
                         new BonusConfigDto.MinMax(74.0, 84.0),
                         new BonusConfigDto.MinMax(68.0, 78.0)
+                ))
+                .rang2(new BonusConfigDto.ZoneConfig(
+                        new BonusConfigDto.MinMax(67.0, 72.0),
+                        new BonusConfigDto.MinMax(63.0, 68.0),
+                        new BonusConfigDto.MinMax(57.0, 63.0)
                 ))
                 .build();
     }
@@ -213,5 +213,12 @@ public class Fichier2AggregatorService {
         double res = calc(num, denum);
         double part = calcPart(denum, totalDenumGlobal);
         return new ConstructionGroupDto(num, denum, res, part, calcBonus(res, part, min, max));
+    }
+
+    // HELPER JDID DYAL RANG 2
+    private PerfRang2GroupDto buildPerfRang2Group(long num, long denum, long totalDenumGlobal, double min, double max) {
+        double res = calc(num, denum);
+        double part = calcPart(denum, totalDenumGlobal);
+        return new PerfRang2GroupDto(num, denum, res, part, calcBonus(res, part, min, max));
     }
 }
