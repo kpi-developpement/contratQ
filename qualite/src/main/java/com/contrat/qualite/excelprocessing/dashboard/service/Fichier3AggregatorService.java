@@ -1,7 +1,9 @@
 package com.contrat.qualite.excelprocessing.dashboard.service;
 
+import com.contrat.qualite.excelprocessing.dashboard.dto.BonusConfigDto;
+import com.contrat.qualite.excelprocessing.dashboard.dto.Fichier3GroupDto;
 import com.contrat.qualite.excelprocessing.dashboard.dto.Fichier3ResponseDto;
-import com.contrat.qualite.excelprocessing.dashboard.dto.ZoneGroupDto;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -18,13 +20,12 @@ import java.util.Map;
 @Service
 public class Fichier3AggregatorService {
 
-    public Fichier3ResponseDto processFichier3(MultipartFile file) {
-        // ZMD AMII
-        long zmdAmiiNum = 0, zmdAmiiDenum = 0;
-        // ZMD RIP
+    public Fichier3ResponseDto processFichier3(MultipartFile file, String configJson) {
+        long amiiNum = 0, amiiDenum = 0;
         long ripNum = 0, ripDenum = 0;
-        // ZTD
         long ztdNum = 0, ztdDenum = 0;
+
+        BonusConfigDto config = parseConfigOrDefault(configJson);
 
         CSVFormat format = CSVFormat.Builder.create()
                 .setDelimiter(';')
@@ -38,74 +39,103 @@ public class Fichier3AggregatorService {
              CSVParser parser = new CSVParser(br, format)) {
 
             Map<String, Integer> headerMap = parser.getHeaderMap();
-            String actualZoneCol = null;
-            String actualTauxCol = null;
+            String actualZoneCol = null, actualStatutCol = null;
 
-            // 1. Recherche Dynamique dyal les colonnes (Fuzzy Match Anti-Crash)
+            // Fuzzy Match pour les colonnes (À adapter 3la 7ssab l'fichier dyalk b dbt)
             for (String header : headerMap.keySet()) {
                 String cleanHeader = header.trim().toLowerCase();
-                // Kanchofou wach "Zone Ftth Comex"
-                if (cleanHeader.contains("zone") && cleanHeader.contains("ftth")) actualZoneCol = header;
-                    // Kanchofou wach "Taux de report TH"
-                else if (cleanHeader.contains("taux") && cleanHeader.contains("report") && cleanHeader.contains("th")) actualTauxCol = header;
+                if (cleanHeader.contains("zone") || cleanHeader.contains("type")) actualZoneCol = header;
+                if (cleanHeader.contains("statut") || cleanHeader.contains("result")) actualStatutCol = header;
             }
 
-            if (actualZoneCol == null || actualTauxCol == null) {
-                throw new RuntimeException("Mala9inach les colonnes mtloubin (Zone Ftth Comex awla Taux de report TH)");
-            }
-
-            // 2. L'Boucle O(N) dyal l'Calcul
             for (CSVRecord record : parser) {
-                if (record.isMapped(actualZoneCol) && record.isMapped(actualTauxCol)) {
+                if (actualZoneCol != null && actualStatutCol != null
+                        && record.isMapped(actualZoneCol) && record.isMapped(actualStatutCol)) {
 
                     String rawZone = record.get(actualZoneCol);
-                    String rawTaux = record.get(actualTauxCol);
+                    String rawStatut = record.get(actualStatutCol);
 
-                    String zone = rawZone != null ? rawZone.toUpperCase().replaceAll("[\\n\\r]+", " ").replaceAll("\\s+", " ").trim() : "";
-                    String taux = rawTaux != null ? rawTaux.trim() : "";
+                    String zone = rawZone != null ? rawZone.toUpperCase().trim() : "";
+                    String statut = rawStatut != null ? rawStatut.toUpperCase().trim() : "";
 
-                    // L'calcul kaydar GHA ILA kan l'taux fih 0 awla 1
-                    if (taux.equals("0") || taux.equals("0.0") || taux.equals("1") || taux.equals("1.0")) {
-                        boolean isUn = taux.equals("1") || taux.equals("1.0");
+                    // L'condition dyal l'OK (NUM) -> À adapter 3la 7ssab logique Fichier 3 dyalk
+                    boolean isOk = statut.equals("OK") || statut.equals("1");
 
-                        // Application des règles 3la 7sab l'Zone
-                        if (zone.contains("ZMD RIP")) {
-                            ripDenum++;
-                            if (isUn) ripNum++;
-                        }
-                        else if (zone.contains("ZMD AMII")) {
-                            zmdAmiiDenum++;
-                            if (isUn) zmdAmiiNum++;
-                        }
-                        else if (zone.contains("ZTD")) {
-                            ztdDenum++;
-                            if (isUn) ztdNum++;
-                        }
+                    if (zone.contains("AMII")) {
+                        amiiDenum++;
+                        if (isOk) amiiNum++;
+                    } else if (zone.contains("RIP")) {
+                        ripDenum++;
+                        if (isOk) ripNum++;
+                    } else if (zone.contains("ZTD")) {
+                        ztdDenum++;
+                        if (isOk) ztdNum++;
                     }
                 }
             }
         } catch (Exception e) {
-            log.error("Erreur f l'analyse dyal Fichier 3 (ZMD/ZTD/RIP)", e);
+            log.error("Erreur f l'analyse dyal Fichier 3", e);
             throw new RuntimeException("Erreur f l'analyse: " + e.getMessage());
         }
 
+        // 1. CALCUL TOTAL DENUM (Pour Part de Marché)
+        long totalDenum = amiiDenum + ripDenum + ztdDenum;
+
+        // 2. BUILD DES RÉSULTATS AVEC L'HYBRID FORMULA
         return Fichier3ResponseDto.builder()
-                .zmdAmii(buildZoneGroup(zmdAmiiNum, zmdAmiiDenum))
-                .zmdRip(buildZoneGroup(ripNum, ripDenum))
-                .ztd(buildZoneGroup(ztdNum, ztdDenum))
+                .zmdAmii(buildGroup(amiiNum, amiiDenum, totalDenum, config.getZmdAmii()))
+                .zmdRip(buildGroup(ripNum, ripDenum, totalDenum, config.getZmdRip()))
+                .ztd(buildGroup(ztdNum, ztdDenum, totalDenum, config.getZtd()))
                 .build();
     }
 
-    private ZoneGroupDto buildZoneGroup(long num, long denum) {
-        double resultat = 0.0;
-        if (denum > 0) {
-            resultat = ((double) num / denum) * 100;
-            resultat = Math.round(resultat * 100.0) / 100.0;
+    // ================= HELPERS & CONFIG ================= //
+
+    private BonusConfigDto parseConfigOrDefault(String configJson) {
+        if (configJson != null && !configJson.isEmpty()) {
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                return mapper.readValue(configJson, BonusConfigDto.class);
+            } catch (Exception e) {
+                log.error("Error parsing config, falling back to defaults", e);
+            }
         }
-        return ZoneGroupDto.builder()
-                .num(num)
-                .denum(denum)
-                .resultat(resultat)
-                .build();
+        BonusConfigDto defaultConfig = new BonusConfigDto();
+        // Valeurs Initiales dyal Fichier 3 (L'khayba 10%, L'mzyana 6%, BonusMax 2%)
+        BonusConfigDto.SingleConfig defaultF3Config = new BonusConfigDto.SingleConfig(10.0, 6.0, 2.0);
+        defaultConfig.setZmdAmii(defaultF3Config);
+        defaultConfig.setZmdRip(defaultF3Config);
+        defaultConfig.setZtd(defaultF3Config);
+        return defaultConfig;
+    }
+
+    private double calc(long num, long denum) {
+        if (denum == 0) return 0.0;
+        return Math.round((((double) num / denum) * 100) * 100.0) / 100.0;
+    }
+
+    private double calcPart(long localDenum, long globalDenum) {
+        if (globalDenum == 0) return 0.0;
+        return Math.round((((double) localDenum / globalDenum) * 100) * 100.0) / 100.0;
+    }
+
+    // L'FORMULE HYBRIDE : Inverse (Lower is better) * Part de Marché
+    private double calcInverseBonusWithPart(double resultat, double partDeMarche, double pointMin, double pointMax, double bonusMax) {
+        double partRatio = partDeMarche / 100.0;
+
+        // Point MIN hna = 10% (L'khayba), Point MAX = 6% (L'mzyana)
+        if (resultat >= pointMin) return 0.0;
+        if (resultat <= pointMax) return Math.round((bonusMax * partRatio) * 100.0) / 100.0;
+
+        // Interpolation Règle de 3
+        double bonus = ((resultat - pointMin) / (pointMax - pointMin)) * bonusMax * partRatio;
+        return Math.round(bonus * 100.0) / 100.0;
+    }
+
+    private Fichier3GroupDto buildGroup(long num, long denum, long totalDenum, BonusConfigDto.SingleConfig conf) {
+        double res = calc(num, denum);
+        double part = calcPart(denum, totalDenum);
+        double bonus = calcInverseBonusWithPart(res, part, conf.getMin(), conf.getMax(), conf.getBonusMax());
+        return new Fichier3GroupDto(num, denum, res, part, bonus);
     }
 }

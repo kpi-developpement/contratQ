@@ -22,8 +22,11 @@ const INITIAL_CONFIG = {
   rang2: { a: { min: 67.0, max: 72.0 }, b: { min: 63.0, max: 68.0 }, c: { min: 57.0, max: 63.0 } },
   sacli: { min: 80.0, max: 95.0, bonusMax: 2.0 },
   sarcli: { min: 30.0, max: 55.0, bonusMax: 1.0 },
-  gemNok: { min: 5.0, max: 2.0, bonusMax: 2.0 }, // LOGIQUE INVERSE
-  taux20j: { min: 80.0, max: 95.0, bonusMax: 2.0 }
+  gemNok: { min: 5.0, max: 2.0, bonusMax: 2.0 },
+  taux20j: { min: 80.0, max: 95.0, bonusMax: 2.0 },
+  zmdAmii: { min: 10.0, max: 6.0, bonusMax: 2.0 },
+  zmdRip: { min: 10.0, max: 6.0, bonusMax: 2.0 },
+  ztd: { min: 10.0, max: 6.0, bonusMax: 2.0 }
 };
 
 export default function UnifiedUploader() {
@@ -63,9 +66,8 @@ export default function UnifiedUploader() {
   const isFichier2Group = !isFichier1Group && !isFichier3Group;
   
   const isMultiGroup = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1", "PERF_RANG_2"].includes(activeModule);
-  const isBonusActive = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1", "PERF_RANG_2", "SACLI_OK", "SARCLI_NOK", "GEM_NOK", "TAUX_20J"].includes(activeModule);
+  const isBonusActive = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1", "PERF_RANG_2", "SACLI_OK", "SARCLI_NOK", "GEM_NOK", "TAUX_20J", "ZMD_AMII", "ZMD_RIP", "ZTD"].includes(activeModule);
 
-  // Fonction Bach njebdo l'config dyal l'module Standalone mli ykoun Active
   const getSingleConfigKey = () => {
     if (activeModule === 'SACLI_OK') return 'sacli';
     if (activeModule === 'SARCLI_NOK') return 'sarcli';
@@ -162,11 +164,7 @@ export default function UnifiedUploader() {
 
     const formData = new FormData(); 
     formData.append('file', fileToUpload);
-    
-    // NSIFTOU L'CONFIG L'GAAA3 LES MODULES LI 3NDHOM L'BONUS DYNAMIQUE
-    if (isFichier2Group || isFichier1Group) {
-      formData.append('config', JSON.stringify(bonusConfig));
-    }
+    formData.append('config', JSON.stringify(bonusConfig)); // KANSFTOU L'CONFIG DIMA!
 
     try {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7623';
@@ -218,7 +216,10 @@ export default function UnifiedUploader() {
   };
 
   const uiData = formatDataForUI();
-  const showConfigButton = isFichier2Group || singleConfigKey !== null;
+  const showConfigButton = isFichier2Group || isFichier3Group || singleConfigKey !== null;
+
+  // L'GRID DYAL L'SINGLE VIEW KATBEDDEL 3LA HSSAB WACH KAYN PART DE MARCHE WLA LA
+  const singleGridClass = isBonusActive && isFichier3Group ? "grid5" : isBonusActive ? "grid4" : "grid3";
 
   return (
     <>
@@ -325,7 +326,10 @@ export default function UnifiedUploader() {
                         <div style={{ padding: '8px', background: '#eff6ff', borderRadius: '8px', color: '#3b82f6' }}>
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                         </div>
-                        <h4 style={{ margin: 0, color: '#0f172a', fontSize: '1.1rem' }}>Ajustement Dynamique des Seuils (%)</h4>
+                        <h4 style={{ margin: 0, color: '#0f172a', fontSize: '1.1rem' }}>
+                          Ajustement Dynamique des Seuils (%) 
+                          {(activeModule === 'GEM_NOK' || isFichier3Group) && <span style={{ color: '#ef4444', fontSize: '13px', marginLeft: '10px', padding: '4px 8px', background: '#fee2e2', borderRadius: '4px' }}>Logique Inverse Activée</span>}
+                        </h4>
                       </div>
                       
                       {isFichier2Group && (
@@ -357,16 +361,41 @@ export default function UnifiedUploader() {
                         </table>
                       )}
 
-                      {singleConfigKey && (
+                      {/* CONFIG PANEL L'FICHIER 3 HYBRIDE */}
+                      {isFichier3Group && (
+                        <table className="configTable" style={{ width: '80%', margin: '0 auto' }}>
+                          <thead>
+                            <tr>
+                              <th style={{ textAlign: 'left' }}>Indicateur</th>
+                              <th style={{ color: '#ef4444' }}>Point MIN (L'khayb)</th>
+                              <th style={{ color: '#10b981' }}>Point MAX (L'mzyan)</th>
+                              <th style={{ color: '#F59E0B' }}>Bonus MAX</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {[{key: 'zmdAmii', label: 'ZMD AMII'}, {key: 'zmdRip', label: 'ZMD RIP'}, {key: 'ztd', label: 'ZTD'}].map((item, idx) => (
+                              <tr key={item.key} style={{ background: idx % 2 === 0 ? '#fff' : '#f8fafc' }}>
+                                <td style={{ fontWeight: '800', color: '#334155', textAlign: 'left', paddingLeft: '15px' }}>{item.label}</td>
+                                <td><input type="number" step="0.1" className="configInput" value={bonusConfig[item.key].min} onChange={(e) => handleSingleConfigChange(item.key, 'min', e.target.value)} /></td>
+                                <td><input type="number" step="0.1" className="configInput" value={bonusConfig[item.key].max} onChange={(e) => handleSingleConfigChange(item.key, 'max', e.target.value)} /></td>
+                                <td><input type="number" step="0.1" className="configInput" style={{ borderColor: '#F59E0B', color: '#F59E0B' }} value={bonusConfig[item.key].bonusMax} onChange={(e) => handleSingleConfigChange(item.key, 'bonusMax', e.target.value)} /></td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+
+                      {/* CONFIG PANEL L'FICHIER 1 */}
+                      {singleConfigKey && !isFichier3Group && (
                         <div style={{ display: 'flex', gap: '30px', justifyContent: 'center', background: '#f8fafc', padding: '20px', borderRadius: '12px' }}>
                           <div style={{ textAlign: 'center' }}>
-                            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginBottom: '8px' }}>
+                            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: activeModule === 'GEM_NOK' ? '#ef4444' : '#64748b', marginBottom: '8px' }}>
                               {activeModule === 'GEM_NOK' ? 'Point MIN (Lkhayb)' : 'Point MIN'}
                             </label>
                             <input type="number" step="0.1" className="configInput" value={bonusConfig[singleConfigKey].min} onChange={(e) => handleSingleConfigChange(singleConfigKey, 'min', e.target.value)} />
                           </div>
                           <div style={{ textAlign: 'center' }}>
-                            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginBottom: '8px' }}>
+                            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: activeModule === 'GEM_NOK' ? '#10b981' : '#64748b', marginBottom: '8px' }}>
                               {activeModule === 'GEM_NOK' ? 'Point MAX (Lmzyan)' : 'Point MAX'}
                             </label>
                             <input type="number" step="0.1" className="configInput" value={bonusConfig[singleConfigKey].max} onChange={(e) => handleSingleConfigChange(singleConfigKey, 'max', e.target.value)} />
@@ -483,9 +512,10 @@ export default function UnifiedUploader() {
                       </div>
                     </div>
                   ) : (
-                    <div className={isBonusActive ? "grid4" : "grid3"} style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(200px, 1fr))`, gap: '16px' }}>
+                    <div className={singleGridClass}>
                       <ResultCard delay="0s" label="Numérateur (NUM)" value={uiData.num} icon={<IconNum/>} />
                       <ResultCard delay="0.1s" label="Dénominateur (DENUM)" value={uiData.denum} icon={<IconDenum/>} />
+                      {isFichier3Group && <ResultCard delay="0.15s" label="Part (Poids)" value={`${uiData.partDeMarche || 0}%`} icon={<IconPie/>} />}
                       <ResultCard delay="0.2s" highlight={true} label="Taux de réussite" value={`${uiData.resultat}%`} icon={<IconResult/>} />
                       {isBonusActive && <ResultCard delay="0.3s" highlight={true} label="Bonus Gagné" value={`+${uiData.bonus || 0}%`} icon={<IconBonus/>} />}
                     </div>

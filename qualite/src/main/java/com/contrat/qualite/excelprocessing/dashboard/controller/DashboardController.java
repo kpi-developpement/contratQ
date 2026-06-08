@@ -27,8 +27,10 @@ public class DashboardController {
     }
 
     @PostMapping("/fichier3")
-    public ResponseEntity<Fichier3ResponseDto> processFichier3(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<Fichier3ResponseDto> processFichier3(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "config", required = false) String configJson) {
         if (file.isEmpty()) return ResponseEntity.badRequest().build();
-        return ResponseEntity.ok(fichier3Service.processFichier3(file));
+        return ResponseEntity.ok(fichier3Service.processFichier3(file, configJson));
     }
 }

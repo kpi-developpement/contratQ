@@ -18,9 +18,13 @@ public class BonusConfigDto {
     private SingleConfig sacli;
     private SingleConfig sarcli;
 
-    // ZEDNA LES MODULES JDAD HNA
     private SingleConfig gemNok;
     private SingleConfig taux20j;
+
+    // ZEDNA FICHIER 3 HNA
+    private SingleConfig zmdAmii;
+    private SingleConfig zmdRip;
+    private SingleConfig ztd;
 
     @Data
     @NoArgsConstructor

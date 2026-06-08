@@ -6,12 +6,15 @@ export default function MasterTable({ data, activeModule }) {
   if (!data) return null;
 
   const isMultiGroup = data.groupA !== undefined;
+  const isFichier3Group = ["ZMD_AMII", "ZMD_RIP", "ZTD"].includes(activeModule);
   
-  // ZEDNA GAAA3 LES MODULES LI FIHOM L'BONUS HNA
   const isBonusActive = [
     "PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1", "PERF_RANG_2", 
-    "SACLI_OK", "SARCLI_NOK", "GEM_NOK", "TAUX_20J"
+    "SACLI_OK", "SARCLI_NOK", "GEM_NOK", "TAUX_20J", "ZMD_AMII", "ZMD_RIP", "ZTD"
   ].includes(activeModule);
+
+  // Fichier 3 w l'MultiGroup homa li fihom Part de marché
+  const hasPartDeMarche = isMultiGroup || isFichier3Group;
 
   let tableRows = [];
 
@@ -31,14 +34,14 @@ export default function MasterTable({ data, activeModule }) {
     ];
   } else {
     tableRows = [
-      { id: 'GLOBAL', label: 'Traitement Global', data: data },
+      { id: 'GLOBAL', label: `Traitement Global - ${activeModule?.replace(/_/g, ' ')}`, data: data },
     ];
   }
 
   const totalNum = isMultiGroup ? tableRows.reduce((acc, row) => acc + row.data.num, 0) : data.num;
   const totalDenum = isMultiGroup ? tableRows.reduce((acc, row) => acc + row.data.denum, 0) : data.denum;
   const totalResultat = totalDenum > 0 ? ((totalNum / totalDenum) * 100).toFixed(2) : "0.00";
-  const totalPart = totalDenum > 0 ? "100.00" : "0.00";
+  const totalPart = isMultiGroup ? "100.00" : (data.partDeMarche || 0).toFixed(2);
   const totalBonus = isBonusActive 
     ? (isMultiGroup ? tableRows.reduce((acc, row) => acc + (row.data.bonus || 0), 0) : (data.bonus || 0)).toFixed(2) 
     : "0.00";
@@ -57,7 +60,7 @@ export default function MasterTable({ data, activeModule }) {
               <th style={{ padding: '15px', textAlign: 'left', color: '#475569' }}>Indicateur / Groupe</th>
               <th style={{ padding: '15px', color: '#475569' }}>NUM</th>
               <th style={{ padding: '15px', color: '#475569' }}>DENUM</th>
-              {isMultiGroup && <th style={{ padding: '15px', color: '#8b5cf6' }}>Part de Marché</th>}
+              {hasPartDeMarche && <th style={{ padding: '15px', color: '#8b5cf6' }}>Part de Marché</th>}
               <th style={{ padding: '15px', color: '#10b981' }}>Taux de Réussite</th>
               {isBonusActive && <th style={{ padding: '15px', color: '#F59E0B' }}>Bonus Gagné</th>}
             </tr>
@@ -72,7 +75,7 @@ export default function MasterTable({ data, activeModule }) {
                 <td style={{ padding: '15px', color: '#64748b', fontWeight: '500' }}>{row.data.num.toLocaleString()}</td>
                 <td style={{ padding: '15px', color: '#64748b', fontWeight: '500' }}>{row.data.denum.toLocaleString()}</td>
                 
-                {isMultiGroup && (
+                {hasPartDeMarche && (
                   <td style={{ padding: '15px' }}>
                     <span style={{ color: '#8b5cf6', fontWeight: 'bold', backgroundColor: 'rgba(139, 92, 246, 0.1)', padding: '6px 12px', borderRadius: '8px', display: 'inline-block' }}>
                       {row.data.partDeMarche || 0}%
@@ -98,10 +101,10 @@ export default function MasterTable({ data, activeModule }) {
           </tbody>
           <tfoot>
             <tr style={{ backgroundColor: '#f8fafc', borderTop: '2px solid #e2e8f0', fontWeight: 'bold' }}>
-              <td style={{ padding: '18px', textAlign: 'left', color: '#0f172a' }}>TOTAL GLOBAL</td>
+              <td style={{ padding: '18px', textAlign: 'left', color: '#0f172a' }}>TOTAL</td>
               <td style={{ padding: '18px', color: '#0f172a' }}>{totalNum.toLocaleString()}</td>
               <td style={{ padding: '18px', color: '#0f172a' }}>{totalDenum.toLocaleString()}</td>
-              {isMultiGroup && (
+              {hasPartDeMarche && (
                 <td style={{ padding: '18px' }}>
                   <span style={{ color: '#8b5cf6', fontWeight: '900' }}>{totalPart}%</span>
                 </td>
