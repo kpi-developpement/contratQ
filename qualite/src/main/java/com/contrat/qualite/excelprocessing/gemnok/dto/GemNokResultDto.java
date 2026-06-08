@@ -13,4 +13,5 @@ public class GemNokResultDto {
     private long num;
     private long denum;
     private double resultat;
+    private double bonus; // <-- L'BONUS TZAD
 }

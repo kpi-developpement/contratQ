@@ -15,9 +15,12 @@ public class BonusConfigDto {
     private ZoneConfig construction;
     private ZoneConfig rang2;
 
-    // ZEDNA HADO L FICHIER 1
     private SingleConfig sacli;
     private SingleConfig sarcli;
+
+    // ZEDNA LES MODULES JDAD HNA
+    private SingleConfig gemNok;
+    private SingleConfig taux20j;
 
     @Data
     @NoArgsConstructor
@@ -36,7 +39,6 @@ public class BonusConfigDto {
         private double max;
     }
 
-    // CONFIG JDIDA KHASSA B LES PROCESS LI MAFIHOMCH ZONES
     @Data
     @NoArgsConstructor
     @AllArgsConstructor

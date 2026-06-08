@@ -16,8 +16,11 @@ public class GemNokController {
     private final GemNokService gemNokService;
 
     @PostMapping("/analyze")
-    public ResponseEntity<GemNokResultDto> analyzeGemNok(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<GemNokResultDto> analyzeGemNok(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "config", required = false) String configJson) {
+
         if (file.isEmpty()) return ResponseEntity.badRequest().build();
-        return ResponseEntity.ok(gemNokService.processGemNokExcel(file));
+        return ResponseEntity.ok(gemNokService.processGemNokExcel(file, configJson));
     }
 }

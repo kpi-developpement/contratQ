@@ -14,14 +14,16 @@ const API_ENDPOINTS_FICHIER_1 = {
   TAUX_20J: "/api/v1/excel/taux20j/analyze",
 };
 
-// INITIAL CONFIG B L'ZOUZ (Fichier 2 w Fichier 1)
+// INITIAL CONFIG KAAAAMLA
 const INITIAL_CONFIG = {
   plp: { a: { min: 93.0, max: 98.0 }, b: { min: 90.0, max: 96.0 }, c: { min: 86.0, max: 95.0 } },
   hotline: { a: { min: 84.0, max: 91.0 }, b: { min: 77.0, max: 88.0 }, c: { min: 76.0, max: 83.0 } },
   construction: { a: { min: 78.0, max: 86.0 }, b: { min: 74.0, max: 84.0 }, c: { min: 68.0, max: 78.0 } },
   rang2: { a: { min: 67.0, max: 72.0 }, b: { min: 63.0, max: 68.0 }, c: { min: 57.0, max: 63.0 } },
   sacli: { min: 80.0, max: 95.0, bonusMax: 2.0 },
-  sarcli: { min: 30.0, max: 55.0, bonusMax: 1.0 }
+  sarcli: { min: 30.0, max: 55.0, bonusMax: 1.0 },
+  gemNok: { min: 5.0, max: 2.0, bonusMax: 2.0 }, // LOGIQUE INVERSE
+  taux20j: { min: 80.0, max: 95.0, bonusMax: 2.0 }
 };
 
 export default function UnifiedUploader() {
@@ -61,8 +63,17 @@ export default function UnifiedUploader() {
   const isFichier2Group = !isFichier1Group && !isFichier3Group;
   
   const isMultiGroup = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1", "PERF_RANG_2"].includes(activeModule);
-  // ZEDNA SACLI W SARCLI F IS BONUS ACTIVE
-  const isBonusActive = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1", "PERF_RANG_2", "SACLI_OK", "SARCLI_NOK"].includes(activeModule);
+  const isBonusActive = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1", "PERF_RANG_2", "SACLI_OK", "SARCLI_NOK", "GEM_NOK", "TAUX_20J"].includes(activeModule);
+
+  // Fonction Bach njebdo l'config dyal l'module Standalone mli ykoun Active
+  const getSingleConfigKey = () => {
+    if (activeModule === 'SACLI_OK') return 'sacli';
+    if (activeModule === 'SARCLI_NOK') return 'sarcli';
+    if (activeModule === 'GEM_NOK') return 'gemNok';
+    if (activeModule === 'TAUX_20J') return 'taux20j';
+    return null;
+  };
+  const singleConfigKey = getSingleConfigKey();
 
   const getCurrentResult = () => {
     if (!activeModule) return null;
@@ -152,8 +163,8 @@ export default function UnifiedUploader() {
     const formData = new FormData(); 
     formData.append('file', fileToUpload);
     
-    // NSIFTOU L'CONFIG DIMA (Ila Backend braha ayakhdha, wla ykhelliha)
-    if (isFichier2Group || activeModule === "SACLI_OK" || activeModule === "SARCLI_NOK") {
+    // NSIFTOU L'CONFIG L'GAAA3 LES MODULES LI 3NDHOM L'BONUS DYNAMIQUE
+    if (isFichier2Group || isFichier1Group) {
       formData.append('config', JSON.stringify(bonusConfig));
     }
 
@@ -198,7 +209,7 @@ export default function UnifiedUploader() {
   const formatDataForUI = () => {
     const raw = currentResult?.data;
     if (!raw) return null;
-    if (!isMultiGroup) return raw; // Fichier 1 raw data is directly used
+    if (!isMultiGroup) return raw; 
     return {
       groupA: raw.groupA || { num: 0, denum: 0, resultat: 0, partDeMarche: 0, bonus: 0 },
       groupB: raw.groupB || { num: 0, denum: 0, resultat: 0, partDeMarche: 0, bonus: 0 },
@@ -207,52 +218,33 @@ export default function UnifiedUploader() {
   };
 
   const uiData = formatDataForUI();
+  const showConfigButton = isFichier2Group || singleConfigKey !== null;
 
   return (
     <>
       <style dangerouslySetInnerHTML={{__html: `
         body, html { background-color: #ffffff !important; margin: 0; padding: 0; overflow-x: hidden; overflow-y: auto !important; }
         canvas { position: fixed !important; top: 0; left: 0; z-index: -1; }
-        
+        .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 15px; }
         .grid4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 15px; }
         .grid5 { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-top: 15px; }
         
-        /* Premium Settings Panel Styles */
         .configPanel { 
-          background: rgba(255, 255, 255, 0.9); 
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(226, 232, 240, 0.8); 
-          border-radius: 12px; 
-          padding: 24px; 
-          margin-bottom: 24px;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-          animation: slideDown 0.3s ease-out;
+          background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px);
+          border: 1px solid rgba(226, 232, 240, 0.8); border-radius: 12px; 
+          padding: 24px; margin-bottom: 24px;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); animation: slideDown 0.3s ease-out;
         }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Gold Pulse Animation for Bonus */
-        @keyframes goldPulse {
-          0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
-          70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
-        }
+        @keyframes goldPulse { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
         .gold-pulse-bg { animation: goldPulse 2s infinite; }
         
         .configTable { width: 100%; border-collapse: separate; border-spacing: 0 10px; text-align: center; }
         .configTable th { padding: 10px; font-size: 13px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #f1f5f9; }
         .configTable td { padding: 8px; }
         
-        .configInput { 
-          width: 70px; 
-          padding: 10px; 
-          border: 1px solid #cbd5e1; 
-          border-radius: 8px; 
-          text-align: center; 
-          font-weight: 700; 
-          color: #0f172a; 
-          background: #f8fafc;
-          transition: all 0.2s ease;
-        }
+        .configInput { width: 70px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; text-align: center; font-weight: 700; color: #0f172a; background: #f8fafc; transition: all 0.2s ease; }
         .configInput:focus { outline: none; border-color: #3b82f6; background: #fff; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
         .configBtn { display: flex; alignItems: center; gap: 8px; background: #ffffff; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 8px; cursor: pointer; color: #334155; font-weight: 600; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
         .configBtn:hover { background: #f8fafc; border-color: #94a3b8; transform: translateY(-1px); }
@@ -317,8 +309,8 @@ export default function UnifiedUploader() {
               {!currentResult && (
                 <div className={styles.uploadSection}>
                   
-                  {/* PANEL DE CONFIGURATION DYNAMIQUE (CONTEXT-AWARE) */}
-                  {(isFichier2Group || activeModule === 'SACLI_OK' || activeModule === 'SARCLI_NOK') && (
+                  {/* PANEL DE CONFIGURATION DYNAMIQUE CONTEXT-AWARE */}
+                  {showConfigButton && (
                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '15px' }}>
                       <button onClick={() => setShowConfigPanel(!showConfigPanel)} className={`configBtn ${showConfigPanel ? 'active' : ''}`}>
                         <span style={{ width: '18px', display: 'flex' }}><IconSettings/></span>
@@ -327,7 +319,7 @@ export default function UnifiedUploader() {
                     </div>
                   )}
 
-                  {showConfigPanel && (isFichier2Group || activeModule === 'SACLI_OK' || activeModule === 'SARCLI_NOK') && (
+                  {showConfigPanel && showConfigButton && (
                     <div className="configPanel">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
                         <div style={{ padding: '8px', background: '#eff6ff', borderRadius: '8px', color: '#3b82f6' }}>
@@ -365,19 +357,23 @@ export default function UnifiedUploader() {
                         </table>
                       )}
 
-                      {(activeModule === 'SACLI_OK' || activeModule === 'SARCLI_NOK') && (
-                        <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
+                      {singleConfigKey && (
+                        <div style={{ display: 'flex', gap: '30px', justifyContent: 'center', background: '#f8fafc', padding: '20px', borderRadius: '12px' }}>
                           <div style={{ textAlign: 'center' }}>
-                            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginBottom: '8px' }}>Point MIN</label>
-                            <input type="number" step="0.1" className="configInput" value={activeModule === 'SACLI_OK' ? bonusConfig.sacli.min : bonusConfig.sarcli.min} onChange={(e) => handleSingleConfigChange(activeModule === 'SACLI_OK' ? 'sacli' : 'sarcli', 'min', e.target.value)} />
+                            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginBottom: '8px' }}>
+                              {activeModule === 'GEM_NOK' ? 'Point MIN (Lkhayb)' : 'Point MIN'}
+                            </label>
+                            <input type="number" step="0.1" className="configInput" value={bonusConfig[singleConfigKey].min} onChange={(e) => handleSingleConfigChange(singleConfigKey, 'min', e.target.value)} />
                           </div>
                           <div style={{ textAlign: 'center' }}>
-                            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginBottom: '8px' }}>Point MAX</label>
-                            <input type="number" step="0.1" className="configInput" value={activeModule === 'SACLI_OK' ? bonusConfig.sacli.max : bonusConfig.sarcli.max} onChange={(e) => handleSingleConfigChange(activeModule === 'SACLI_OK' ? 'sacli' : 'sarcli', 'max', e.target.value)} />
+                            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginBottom: '8px' }}>
+                              {activeModule === 'GEM_NOK' ? 'Point MAX (Lmzyan)' : 'Point MAX'}
+                            </label>
+                            <input type="number" step="0.1" className="configInput" value={bonusConfig[singleConfigKey].max} onChange={(e) => handleSingleConfigChange(singleConfigKey, 'max', e.target.value)} />
                           </div>
                           <div style={{ textAlign: 'center' }}>
                             <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#F59E0B', marginBottom: '8px' }}>Bonus MAX</label>
-                            <input type="number" step="0.1" className="configInput" style={{ borderColor: '#F59E0B', color: '#F59E0B' }} value={activeModule === 'SACLI_OK' ? bonusConfig.sacli.bonusMax : bonusConfig.sarcli.bonusMax} onChange={(e) => handleSingleConfigChange(activeModule === 'SACLI_OK' ? 'sacli' : 'sarcli', 'bonusMax', e.target.value)} />
+                            <input type="number" step="0.1" className="configInput" style={{ borderColor: '#F59E0B', color: '#F59E0B' }} value={bonusConfig[singleConfigKey].bonusMax} onChange={(e) => handleSingleConfigChange(singleConfigKey, 'bonusMax', e.target.value)} />
                           </div>
                         </div>
                       )}

@@ -7,8 +7,11 @@ export default function MasterTable({ data, activeModule }) {
 
   const isMultiGroup = data.groupA !== undefined;
   
-  // ZEDNA RANG 2 W FICHIER 1 HNA
-  const isBonusActive = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1", "PERF_RANG_2", "SACLI_OK", "SARCLI_NOK"].includes(activeModule);
+  // ZEDNA GAAA3 LES MODULES LI FIHOM L'BONUS HNA
+  const isBonusActive = [
+    "PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1", "PERF_RANG_2", 
+    "SACLI_OK", "SARCLI_NOK", "GEM_NOK", "TAUX_20J"
+  ].includes(activeModule);
 
   let tableRows = [];
 
