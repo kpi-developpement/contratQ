@@ -36,6 +36,7 @@ public class SavDelaiService {
             String paretoCol = null;
             String dateRdvCol = null;
 
+            // N9elbou 3la les noms dyal les colonnes f l'Header
             for (String header : headerMap.keySet()) {
                 String cleanHeader = header.trim().toLowerCase();
                 if (cleanHeader.contains("pareto delai rdv")) paretoCol = header;
@@ -47,17 +48,20 @@ public class SavDelaiService {
             }
 
             for (CSVRecord record : parser) {
-                if (record.isMapped(paretoCol) && record.isMapped(dateRdvCol)) {
-                    String paretoVal = record.get(paretoCol) != null ? record.get(paretoCol).trim().toLowerCase() : "";
-                    String dateRdvVal = record.get(dateRdvCol) != null ? record.get(dateRdvCol).trim() : "";
 
-                    // L'Logic dyal l'Calcul (DENUM: lignes li fihom Date RDV m3emra)
+                // 1. CALCUL DYAL NUM (M3ZOOL BO7DO)
+                if (record.isMapped(paretoCol)) {
+                    String paretoVal = record.get(paretoCol) != null ? record.get(paretoCol).trim().toLowerCase() : "";
+                    if (paretoVal.equals("0-3j") || paretoVal.equals("0-3 j") || paretoVal.equals("0-3")) {
+                        num++;
+                    }
+                }
+
+                // 2. CALCUL DYAL DENUM (M3ZOOL BO7DO)
+                if (record.isMapped(dateRdvCol)) {
+                    String dateRdvVal = record.get(dateRdvCol) != null ? record.get(dateRdvCol).trim() : "";
                     if (!dateRdvVal.isEmpty()) {
                         denum++;
-                        // NUM: Lignes li fihom 0-3j f Pareto
-                        if (paretoVal.equals("0-3j") || paretoVal.equals("0-3 j") || paretoVal.equals("0-3")) {
-                            num++;
-                        }
                     }
                 }
             }
