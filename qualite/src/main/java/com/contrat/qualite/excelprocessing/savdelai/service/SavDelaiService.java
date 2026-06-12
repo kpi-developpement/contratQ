@@ -36,15 +36,21 @@ public class SavDelaiService {
             String paretoCol = null;
             String dateRdvCol = null;
 
-            // Nqelbou 3la les noms dyal les colonnes f l'Header
+            // Nqelbou b debt 3la l'Valeur li 3titini (Exact Match m3a ignoreCase)
             for (String header : headerMap.keySet()) {
-                String cleanHeader = header.trim().toLowerCase();
-                if (cleanHeader.contains("pareto delai rdv")) paretoCol = header;
-                if (cleanHeader.contains("date de rdv client") || cleanHeader.contains("date rdv client")) dateRdvCol = header;
+                String cleanHeader = header.trim();
+
+                if (cleanHeader.equalsIgnoreCase("Pareto Delai RDV")) {
+                    paretoCol = header;
+                }
+
+                if (cleanHeader.equalsIgnoreCase("Date de RDV client")) {
+                    dateRdvCol = header;
+                }
             }
 
             if (paretoCol == null || dateRdvCol == null) {
-                throw new RuntimeException("Mala9inach l'colonnes mzyan (Pareto Delai RDV wla Date de RDV client).");
+                throw new RuntimeException("Mala9inach l'colonnes mzyan. Wach 'Pareto Delai RDV' w 'Date de RDV client' mktoubin s7a7 f l'Excel?");
             }
 
             for (CSVRecord record : parser) {
