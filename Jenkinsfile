@@ -50,8 +50,8 @@ pipeline {
         success {
             echo "========================================================"
             echo "✅ DÉPLOIEMENT CONTRATQ RÉUSSI !"
-            echo "🌐 Frontend: http://10.10.10.50:8741"
-            echo "⚙️ Backend: http://10.10.10.50:7623"
+            echo "🌐 Frontend: http://10.10.10.25:8741"
+            echo "⚙️ Backend: http://10.10.10.25:7623"
             echo "🛡️ BASE DE DONNÉES SÉCURISÉE (Volume Intact 100%)"
             echo "========================================================"
         }
