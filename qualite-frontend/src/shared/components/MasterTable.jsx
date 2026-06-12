@@ -8,7 +8,7 @@ export default function MasterTable({ data, activeModule }) {
   const isMultiGroup = data.groupA !== undefined;
   const isFichier3Group = ["ZMD_AMII", "ZMD_RIP", "ZTD"].includes(activeModule);
   
-  // HNA: CCR, SECURISATION, SAV_PERF w SAV_DELAI makayninch f isBonusActive (Donc ghatbban fihom gher 3 colonnes)
+  // Les modules li fihom l'Bonus (RACC)
   const isBonusActive = [
     "PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1", "PERF_RANG_2", 
     "SACLI_OK", "SARCLI_NOK", "GEM_NOK", "TAUX_20J", "ZMD_AMII", "ZMD_RIP", "ZTD"
