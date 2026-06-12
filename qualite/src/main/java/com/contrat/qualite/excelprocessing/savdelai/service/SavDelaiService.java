@@ -36,7 +36,7 @@ public class SavDelaiService {
             String paretoCol = null;
             String dateRdvCol = null;
 
-            // N9elbou 3la les noms dyal les colonnes f l'Header
+            // Nqelbou 3la les noms dyal les colonnes f l'Header
             for (String header : headerMap.keySet()) {
                 String cleanHeader = header.trim().toLowerCase();
                 if (cleanHeader.contains("pareto delai rdv")) paretoCol = header;
@@ -49,18 +49,19 @@ public class SavDelaiService {
 
             for (CSVRecord record : parser) {
 
-                // 1. CALCUL DYAL NUM (M3ZOOL BO7DO)
+                // 1. CALCUL DYAL NUM (M3ZOOL) - L'Valeur exacte "0-3j"
                 if (record.isMapped(paretoCol)) {
-                    String paretoVal = record.get(paretoCol) != null ? record.get(paretoCol).trim().toLowerCase() : "";
-                    if (paretoVal.equals("0-3j") || paretoVal.equals("0-3 j") || paretoVal.equals("0-3")) {
+                    String paretoVal = record.get(paretoCol);
+                    // Kan-testiw wach l'valeur katsawi b debt "0-3j" (Ignore Case)
+                    if (paretoVal != null && paretoVal.trim().equalsIgnoreCase("0-3j")) {
                         num++;
                     }
                 }
 
-                // 2. CALCUL DYAL DENUM (M3ZOOL BO7DO)
+                // 2. CALCUL DYAL DENUM (M3ZOOL) - Date de RDV m3emra
                 if (record.isMapped(dateRdvCol)) {
-                    String dateRdvVal = record.get(dateRdvCol) != null ? record.get(dateRdvCol).trim() : "";
-                    if (!dateRdvVal.isEmpty()) {
+                    String dateRdvVal = record.get(dateRdvCol);
+                    if (dateRdvVal != null && !dateRdvVal.trim().isEmpty()) {
                         denum++;
                     }
                 }
