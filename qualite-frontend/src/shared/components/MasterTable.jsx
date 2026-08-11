@@ -38,12 +38,13 @@ export default function MasterTable({ data, activeModule }) {
     ];
   }
 
+  // L'FIX HWA HNA: Zedt Number() bach n-évitiw l'crash dyal toFixed is not a function
   const totalNum = isMultiGroup ? tableRows.reduce((acc, row) => acc + row.data.num, 0) : data.num;
   const totalDenum = isMultiGroup ? tableRows.reduce((acc, row) => acc + row.data.denum, 0) : data.denum;
   const totalResultat = totalDenum > 0 ? ((totalNum / totalDenum) * 100).toFixed(2) : "0.00";
-  const totalPart = isMultiGroup ? "100.00" : (data.partDeMarche || 0).toFixed(2);
+  const totalPart = isMultiGroup ? "100.00" : Number(data.partDeMarche || 0).toFixed(2);
   const totalBonus = isBonusActive 
-    ? (isMultiGroup ? tableRows.reduce((acc, row) => acc + (row.data.bonus || 0), 0) : (data.bonus || 0)).toFixed(2) 
+    ? (isMultiGroup ? tableRows.reduce((acc, row) => acc + Number(row.data.bonus || 0), 0) : Number(data.bonus || 0)).toFixed(2) 
     : "0.00";
 
   return (
@@ -78,21 +79,21 @@ export default function MasterTable({ data, activeModule }) {
                 {hasPartDeMarche && (
                   <td style={{ padding: '15px' }}>
                     <span style={{ color: '#8b5cf6', fontWeight: 'bold', backgroundColor: 'rgba(139, 92, 246, 0.1)', padding: '6px 12px', borderRadius: '8px', display: 'inline-block' }}>
-                      {row.data.partDeMarche || 0}%
+                      {Number(row.data.partDeMarche || 0).toFixed(2)}%
                     </span>
                   </td>
                 )}
 
                 <td style={{ padding: '15px' }}>
                   <span style={{ color: '#10b981', fontWeight: 'bold', backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '6px 12px', borderRadius: '8px', display: 'inline-block' }}>
-                    {row.data.resultat}%
+                    {Number(row.data.resultat || 0).toFixed(2)}%
                   </span>
                 </td>
 
                 {isBonusActive && (
                   <td style={{ padding: '15px' }}>
                     <span style={{ color: '#F59E0B', fontWeight: '900', backgroundColor: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '6px 12px', borderRadius: '8px', display: 'inline-block', boxShadow: '0 0 10px rgba(245, 158, 11, 0.2)' }}>
-                      + {row.data.bonus || 0}%
+                      + {Number(row.data.bonus || 0).toFixed(2)}%
                     </span>
                   </td>
                 )}

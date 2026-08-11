@@ -8,7 +8,6 @@ import MasterTable from "./MasterTable";
 import GlobalViewModal from "./GlobalViewModal";
 import styles from "../styles/unified.module.css";
 
-// ZEDNA L'ENDPOINTS JDAD DYAL ZMD W ZTD M3A L'ISOLÉS
 const API_ENDPOINTS_ISOLATED = {
   // RACC
   SACLI_OK: "/api/v1/excel/sacli/analyze",
@@ -32,7 +31,7 @@ const INITIAL_CONFIG = {
   hotline: { a: { min: 84.0, max: 91.0 }, b: { min: 77.0, max: 88.0 }, c: { min: 76.0, max: 83.0 } },
   construction: { a: { min: 78.0, max: 86.0 }, b: { min: 74.0, max: 84.0 }, c: { min: 68.0, max: 78.0 } },
   rang2: { a: { min: 67.0, max: 72.0 }, b: { min: 63.0, max: 68.0 }, c: { min: 57.0, max: 63.0 } },
-  sacli: { min: 80.0, max: 95.0, bonusMax: 2.0 },
+  sacli: { min: 85.0, max: 95.0, bonusMax: 2.0 },
   sarcli: { min: 30.0, max: 55.0, bonusMax: 1.0 },
   gemNok: { min: 5.0, max: 2.0, bonusMax: 2.0 },
   taux20j: { min: 80.0, max: 95.0, bonusMax: 2.0 },
@@ -83,7 +82,6 @@ export default function UnifiedUploader() {
   };
 
   const isFichier3Group = ["ZMD_AMII", "ZMD_RIP", "ZTD"].includes(activeModule);
-  // Ga3 les fichiers tayt-injectaw bo7dhom w kaytsifto l Endpoint dyalhom
   const isIsolatedUpload = ["SACLI_OK", "SARCLI_NOK", "GEM_NOK", "TAUX_20J", "SAV_PERF", "SAV_DELAI", "SECURISATION", "CCR", "SATCLI_SAV", "ZMD_AMII", "ZMD_RIP", "ZTD"].includes(activeModule);
   const isFichier2Group = !isIsolatedUpload;
   
@@ -99,14 +97,13 @@ export default function UnifiedUploader() {
   };
   const singleConfigKey = getSingleConfigKey();
 
-  // ================= THE COMBO LOCK ALGORITHM =================
   const computeBonus = (rawResult, conf, pdm) => {
     let baseBonus = 0;
-    if (conf.min > conf.max) { // Logique Inverse
+    if (conf.min > conf.max) { 
         if (rawResult <= conf.max) baseBonus = conf.bonusMax;
         else if (rawResult >= conf.min) baseBonus = 0;
         else baseBonus = conf.bonusMax * ((conf.min - rawResult) / (conf.min - conf.max));
-    } else { // Logique Normale
+    } else { 
         if (rawResult >= conf.max) baseBonus = conf.bonusMax;
         else if (rawResult <= conf.min) baseBonus = 0;
         else baseBonus = conf.bonusMax * ((rawResult - conf.min) / (conf.max - conf.min));
@@ -119,7 +116,6 @@ export default function UnifiedUploader() {
     const rip = fichier1Cache['ZMD_RIP']?.data;
     const ztd = fichier1Cache['ZTD']?.data;
 
-    // Yt7el l'9fel ghir mli ykouno b 3
     const isComboUnlocked = !!(amii && rip && ztd);
 
     const compute = (raw, key) => {
@@ -132,10 +128,11 @@ export default function UnifiedUploader() {
         const pdm = totalDenum > 0 ? (raw.denum / totalDenum) * 100 : 0;
         const earnedBonus = computeBonus(raw.resultat, bonusConfig[key], pdm);
 
+        // L'FIX HWA HNA: Kan-retourniw Number bach may-crashich l'UI mli ydir .toFixed()
         return { 
           ...raw, 
-          partDeMarche: pdm.toFixed(2), 
-          bonus: earnedBonus.toFixed(2), 
+          partDeMarche: Number(pdm.toFixed(2)), 
+          bonus: Number(earnedBonus.toFixed(2)), 
           isComboUnlocked: true 
         };
     };
@@ -323,9 +320,9 @@ export default function UnifiedUploader() {
   const showConfigButton = isFichier2Group || isFichier3Group || singleConfigKey !== null;
   const singleGridClass = isBonusActive && isFichier3Group ? "grid5" : isBonusActive ? "grid4" : "grid3";
 
-  // L'affichage dyal l'9fel (Lock) ila kan combo mazal
-  const pdmValueDisplay = isFichier3Group && uiData && !uiData.isComboUnlocked ? "🔒" : `${uiData?.partDeMarche || 0}%`;
-  const bonusValueDisplay = isFichier3Group && uiData && !uiData.isComboUnlocked ? "🔒" : `+${uiData?.bonus || 0}%`;
+  // L'FIX HWA HNA: Zedt Number() bach formatage ykoun s7i7
+  const pdmValueDisplay = isFichier3Group && uiData && !uiData.isComboUnlocked ? "🔒" : `${Number(uiData?.partDeMarche || 0).toFixed(2)}%`;
+  const bonusValueDisplay = isFichier3Group && uiData && !uiData.isComboUnlocked ? "🔒" : `+${Number(uiData?.bonus || 0).toFixed(2)}%`;
 
   return (
     <>
@@ -372,7 +369,6 @@ export default function UnifiedUploader() {
         }
         .fabGlobalBtn:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 15px 35px rgba(59, 130, 246, 0.5); }
 
-        /* L'Banner dyal l'9fel f l'Design L9dim */
         .lockBannerLight {
           background-color: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px;
           padding: 15px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px;
@@ -385,7 +381,6 @@ export default function UnifiedUploader() {
         Vue Globale
       </button>
 
-      {/* COMPOSANT IMPORTÉ HNA */}
       {showGlobalModal && (
         <GlobalViewModal 
           onClose={() => setShowGlobalModal(false)} 
@@ -625,7 +620,6 @@ export default function UnifiedUploader() {
                     </button>
                   </div>
                   
-                  {/* L'BANNER DYAL THE COMBO LOCK F L'DESIGN L9DIM */}
                   {isFichier3Group && !uiData.isComboUnlocked && (
                     <div className="lockBannerLight">
                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
