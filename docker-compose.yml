@@ -6,22 +6,28 @@ services:
       context: ./qualite
       dockerfile: Dockerfile
     container_name: contratq_backend_prod
-    restart: unless-stopped
+    restart: always
     ports:
       - "7623:7623" 
     environment:
-      # 🛡️ THE SHIELD: Hna kan-goulou l'Backend y-hder m3a DB l-qdima li f l'serveur 
+      # 🛡️ Connexion l DB li kayna f l'serveur 10.10.10.25
       - SPRING_DATASOURCE_URL=jdbc:postgresql://10.10.10.25:5432/kyntus_db
       - SPRING_DATASOURCE_USERNAME=kyntus_user
       - SPRING_DATASOURCE_PASSWORD=kyntus_password
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      
+      # Limits pour les fichiers Excel kbar
       - SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE=500MB
       - SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE=500MB
     deploy:
       resources:
         limits:
-          memory: 1G 
+          memory: 1.5G 
+    # 🛡️ RISK MANAGEMENT: Log rotation bach l'serveur may3merch
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - contratq-network
 
@@ -30,16 +36,22 @@ services:
       context: ./qualite-frontend
       dockerfile: Dockerfile
       args:
-        # L'Navigateur ghay-hder m3a l'IP d l'serveur
-        - NEXT_PUBLIC_API_URL=${API_URL:-http://10.10.10.25:7623}
+        # L'Navigateur ghay-hder m3a l'IP d l'serveur direct
+        - NEXT_PUBLIC_API_URL=http://10.10.10.25:7623
     container_name: contratq_frontend_prod
-    restart: unless-stopped
+    restart: always
     ports:
       - "8741:8741"
     environment:
       - PORT=8741
     depends_on:
       - backend
+    # 🛡️ RISK MANAGEMENT: Log rotation
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - contratq-network
 

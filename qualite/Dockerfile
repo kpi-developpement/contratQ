@@ -3,7 +3,7 @@ FROM maven:3.9.6-eclipse-temurin-21-alpine AS builder
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
-# N'skippiw tests bach l'build ydoz bzrba f Jenkins
+# N'skippiw tests bach l'build ydoz bzrba
 RUN mvn clean package -DskipTests
 
 # Etape 2: Run l'application b Java 21 JRE
