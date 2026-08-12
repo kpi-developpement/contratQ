@@ -23,7 +23,6 @@ const API_ENDPOINTS_ISOLATED = {
   SATCLI_SAV: "/api/v1/excel/satclisav/analyze",
 };
 
-// L'FIX HWA HNA: Zedt bonusMax l Fichier 2
 const INITIAL_CONFIG = {
   plp: { a: { min: 93.0, max: 98.0 }, b: { min: 90.0, max: 96.0 }, c: { min: 86.0, max: 95.0 }, bonusMax: 4.0 },
   hotline: { a: { min: 84.0, max: 91.0 }, b: { min: 77.0, max: 88.0 }, c: { min: 76.0, max: 83.0 }, bonusMax: 4.0 },
@@ -61,6 +60,25 @@ export default function UnifiedUploader() {
   
   const [selectedDepts, setSelectedDepts] = useState(["GLOBAL"]);
   const [isDeptDropdownOpen, setIsDeptDropdownOpen] = useState(false);
+
+  // L'FIX: Charger la configuration mn localStorage f l'awel
+  useEffect(() => {
+    const savedConfig = localStorage.getItem("kyntus_bonus_config");
+    if (savedConfig) {
+      try {
+        setBonusConfig(JSON.parse(savedConfig));
+      } catch (e) {
+        console.error("Erreur lors du chargement de la configuration", e);
+      }
+    }
+  }, []);
+
+  // L'FIX: Fonction bach n-sauvegardew l'config f localStorage
+  const saveConfigToLocal = () => {
+    localStorage.setItem("kyntus_bonus_config", JSON.stringify(bonusConfig));
+    setSuccessMsg("Paramètres sauvegardés avec succès !");
+    setTimeout(() => setSuccessMsg(""), 4000);
+  };
 
   const modules = {
     SACLI_OK: { id: 'SACLI_OK', category: 'RACC', label: 'SACLI OK', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg> },
@@ -282,8 +300,7 @@ export default function UnifiedUploader() {
   const currentResult = getCurrentResult();
 
   const handleTabChange = (moduleId) => {
-    setActiveModule(moduleId); setFileToUpload(null); setError(""); setSuccessMsg("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    setActiveModule(moduleId); setError(""); setSuccessMsg("");
   };
 
   const handleConfigChange = (process, zone, minOrMax, value) => {
@@ -407,6 +424,8 @@ export default function UnifiedUploader() {
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) { setFileToUpload(e.target.files[0]); setError(""); setSuccessMsg(""); }
   };
+  
+  // L'FIX HWA HNA: removeFileToUpload hya li kat-msse7 l'fichier mn state
   const removeFileToUpload = () => { setFileToUpload(null); if (fileInputRef.current) fileInputRef.current.value = ""; };
 
   const handleResetData = () => {
@@ -415,7 +434,8 @@ export default function UnifiedUploader() {
     } else {
       setFichier2Data(null); 
     }
-    setFileToUpload(null); setSuccessMsg(""); setSelectedDepts(["GLOBAL"]);
+    // L'FIX HWA HNA: 7iydt setFileToUpload(null) bach l'fichier yb9a f mémoire
+    setSuccessMsg(""); setSelectedDepts(["GLOBAL"]);
   };
 
   const handleAnalyze = async () => {
@@ -470,7 +490,7 @@ export default function UnifiedUploader() {
         setSelectedDepts(["GLOBAL"]);
       }
       
-      setFileToUpload(null); 
+      // L'FIX HWA HNA: 7iydt setFileToUpload(null) bach l'fichier yb9a f mémoire mli tsali l'analyse
       setSuccessMsg(`Fichier analysé et sauvegardé avec succès pour ${selectedMonth}/${selectedYear}.`);
     } catch (err) { setError(`Échec : ${err.message}`); } 
     finally { setLoading(false); }
@@ -630,6 +650,14 @@ export default function UnifiedUploader() {
         .multiSelectOption { display: flex; align-items: center; gap: 12px; padding: 10px; cursor: pointer; border-radius: 8px; transition: background 0.2s; color: #1e293b; font-weight: 600; }
         .multiSelectOption:hover { background: #f1f5f9; }
         .multiSelectOption input { width: 18px; height: 18px; cursor: pointer; accent-color: #3b82f6; }
+
+        /* L'FIX HWA HNA: Bouton de sauvegarde */
+        .saveConfigBtn {
+          background: #1D4ED8; color: white; border: none; padding: 12px 24px; border-radius: 12px;
+          font-weight: 700; font-size: 1rem; cursor: pointer; transition: all 0.2s ease;
+          box-shadow: 0 4px 10px rgba(29, 78, 216, 0.3); display: inline-flex; align-items: center; gap: 8px;
+        }
+        .saveConfigBtn:hover { background: #1e3a8a; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(29, 78, 216, 0.4); }
       `}} />
 
       <button className="fabGlobalBtn" onClick={() => setShowGlobalModal(true)}>
@@ -696,7 +724,7 @@ export default function UnifiedUploader() {
               </div>
             </div>
 
-            {/* L'FIX HWA HNA: L'Panneau dyal l'Config wlla dima bayn fo9 l'Module Selector */}
+            {/* L'FIX HWA HNA: L'Panneau dyal l'Config dima lfo9 w fih bouton de sauvegarde */}
             {showConfigButton && (
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '15px' }}>
                 <button onClick={() => setShowConfigPanel(!showConfigPanel)} className={`configBtn ${showConfigPanel ? 'active' : ''}`}>
@@ -792,6 +820,17 @@ export default function UnifiedUploader() {
                     </div>
                   </div>
                 )}
+
+                {/* L'FIX HWA HNA: Bouton de sauvegarde */}
+                <div style={{ textAlign: 'center', marginTop: '25px' }}>
+                  <button className="saveConfigBtn" onClick={saveConfigToLocal}>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    Sauvegarder les paramètres
+                  </button>
+                  <p style={{ fontSize: '12px', color: '#64748b', marginTop: '10px' }}>
+                    Note: Si vous avez déjà analysé un fichier, veuillez cliquer sur "Réinitialiser" puis relancer l'analyse pour mettre à jour la base de données.
+                  </p>
+                </div>
               </div>
             )}
 
