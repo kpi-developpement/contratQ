@@ -57,7 +57,6 @@
   z-index: 10; display: flex; flex-direction: column; align-items: center;
 }
 
-/* L'FIX HWA HNA: L'Container dima bayn, opacity 1, bla hover effects */
 .glassContainer {
   width: 100%; 
   padding: 50px; 
@@ -89,6 +88,19 @@
 .tabBtn:hover { color: #0A1128; background: rgba(255, 255, 255, 0.5); }
 .tabBtn.activeTab { background: #FFFFFF; color: #0A1128; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03); }
 .tabBtn.activeTab svg { color: #D4AF37; }
+
+/* TIME SELECTOR (MOIS/ANNEE) */
+.timeSelector { display: flex; gap: 20px; justify-content: center; margin-bottom: 25px; animation: entranceFadeUp 0.6s ease; }
+.timeGroup { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.timeGroup label { font-size: 0.85rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 1px; }
+.timeSelect { padding: 12px 20px; border-radius: 12px; border: 1px solid #CBD5E1; background: #F8FAFC; color: #0F172A; font-weight: 700; font-size: 1rem; cursor: pointer; transition: all 0.2s ease; min-width: 150px; outline: none; appearance: none; background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%231D4ED8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right 15px top 50%; background-size: 12px auto; }
+.timeSelect:focus, .timeSelect:hover { border-color: #3B82F6; background-color: #FFFFFF; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
+
+/* DEPT SELECTOR */
+.deptSelector { display: flex; align-items: center; gap: 15px; background: #EFF6FF; padding: 15px 20px; border-radius: 16px; border: 1px solid #BFDBFE; margin-bottom: 25px; }
+.deptSelector label { font-size: 0.95rem; font-weight: 800; color: #1E3A8A; margin: 0; }
+.deptSelect { flex: 1; padding: 10px 15px; border-radius: 10px; border: 1px solid #93C5FD; background: #FFFFFF; color: #1E3A8A; font-weight: 700; font-size: 1rem; cursor: pointer; outline: none; transition: all 0.2s ease; appearance: none; background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%231E3A8A%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right 15px top 50%; background-size: 12px auto; }
+.deptSelect:focus { border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
 
 /* CONTENT GRID */
 .contentGrid { display: flex; flex-direction: column; gap: 40px; }
@@ -155,11 +167,6 @@
 .groupContainer { background: rgba(255, 255, 255, 0.4); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 20px; padding: 20px; }
 .groupTitle { color: #0A1128; font-size: 1.1rem; margin: 0 0 15px 0; text-align: center; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
 .resultGridSmall { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; }
-
-/* GLOBAL SECTION DIVIDER */
-.globalSectionDivider { width: 100%; margin: 60px 0 30px; text-align: center; position: relative; }
-.globalSectionDivider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.5), transparent); z-index: 1; }
-.globalSectionDivider h3 { display: inline-block; background: #ffffff; padding: 10px 20px; color: #0A1128; font-weight: 800; font-size: 1.2rem; position: relative; z-index: 2; border-radius: 20px; border: 1px solid rgba(212, 175, 55, 0.3); margin: 0; }
 
 /* ANIMATIONS */
 @keyframes entranceFadeUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }

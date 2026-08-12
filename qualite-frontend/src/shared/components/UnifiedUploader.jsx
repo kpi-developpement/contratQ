@@ -9,7 +9,6 @@ import GlobalViewModal from "./GlobalViewModal";
 import styles from "../styles/unified.module.css";
 
 const API_ENDPOINTS_ISOLATED = {
-  // RACC
   SACLI_OK: "/api/v1/excel/sacli/analyze",
   SARCLI_NOK: "/api/v1/excel/sarcli/analyze",
   GEM_NOK: "/api/v1/excel/gemnok/analyze",
@@ -17,8 +16,6 @@ const API_ENDPOINTS_ISOLATED = {
   ZMD_AMII: "/api/v1/excel/zmdamii/analyze",
   ZMD_RIP: "/api/v1/excel/zmdrip/analyze",
   ZTD: "/api/v1/excel/ztd/analyze",
-  
-  // SAV
   SAV_PERF: "/api/v1/excel/savperf/analyze",
   SAV_DELAI: "/api/v1/excel/savdelai/analyze",
   SECURISATION: "/api/v1/excel/securisation/analyze",
@@ -55,11 +52,14 @@ export default function UnifiedUploader() {
 
   const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [bonusConfig, setBonusConfig] = useState(INITIAL_CONFIG);
-
   const [showGlobalModal, setShowGlobalModal] = useState(false);
 
+  // L'FIX HWA HNA: State l'Mois, l'Année, w l'Département
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedDept, setSelectedDept] = useState("GLOBAL");
+
   const modules = {
-    // ================= RACC =================
     SACLI_OK: { id: 'SACLI_OK', category: 'RACC', label: 'SACLI OK', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg> },
     SARCLI_NOK: { id: 'SARCLI_NOK', category: 'RACC', label: 'SARCLI NOK', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> },
     GEM_NOK: { id: 'GEM_NOK', category: 'RACC', label: 'GEM NOK', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> },
@@ -72,8 +72,6 @@ export default function UnifiedUploader() {
     ZMD_AMII: { id: 'ZMD_AMII', category: 'RACC', label: 'ZMD AMII', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg> },
     ZMD_RIP: { id: 'ZMD_RIP', category: 'RACC', label: 'ZMD RIP', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg> },
     ZTD: { id: 'ZTD', category: 'RACC', label: 'ZTD', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path><path d="M8 6h.01"></path><path d="M16 6h.01"></path><path d="M12 6h.01"></path><path d="M12 10h.01"></path><path d="M12 14h.01"></path><path d="M16 10h.01"></path><path d="M16 14h.01"></path><path d="M8 10h.01"></path><path d="M8 14h.01"></path></svg> },
-
-    // ================= SAV =================
     SAV_PERF: { id: 'SAV_PERF', category: 'SAV', label: 'SAV PERF', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> },
     SAV_DELAI: { id: 'SAV_DELAI', category: 'SAV', label: 'SAV DÉLAI < 3J', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> },
     SECURISATION: { id: 'SECURISATION', category: 'SAV', label: 'SÉCURISATIONS', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg> },
@@ -128,7 +126,6 @@ export default function UnifiedUploader() {
         const pdm = totalDenum > 0 ? (raw.denum / totalDenum) * 100 : 0;
         const earnedBonus = computeBonus(raw.resultat, bonusConfig[key], pdm);
 
-        // L'FIX HWA HNA: Kan-retourniw Number bach may-crashich l'UI mli ydir .toFixed()
         return { 
           ...raw, 
           partDeMarche: Number(pdm.toFixed(2)), 
@@ -233,6 +230,10 @@ export default function UnifiedUploader() {
     const formData = new FormData(); 
     formData.append('file', fileToUpload);
     formData.append('config', JSON.stringify(bonusConfig)); 
+    
+    // L'FIX HWA HNA: Kan-siftou l'Mois w l'Année f l'API
+    formData.append('month', selectedMonth);
+    formData.append('year', selectedYear);
 
     try {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7623';
@@ -247,7 +248,26 @@ export default function UnifiedUploader() {
       
       if (isIsolatedUpload) {
         const title = `Rapport : ${modules[activeModule].label}`;
-        setFichier1Cache(prev => ({ ...prev, [activeModule]: { title, data: fullData } }));
+        
+        // L'FIX HWA HNA: Kan-gériw l'format jdid dyal SACLI (li fih "details")
+        let dataToStore = fullData;
+        let depts = [];
+        
+        if (fullData.details) {
+          dataToStore = fullData.details;
+          depts = Object.keys(fullData.details).sort((a, b) => {
+            if (a === "GLOBAL") return -1;
+            if (b === "GLOBAL") return 1;
+            return a.localeCompare(b);
+          });
+        }
+
+        setFichier1Cache(prev => ({ 
+          ...prev, 
+          [activeModule]: { title, data: dataToStore, departments: depts } 
+        }));
+        setSelectedDept("GLOBAL"); // Reset l'dropdown mli kayt-uploada fichier jdid
+
       } else {
         setFichier2Data(fullData);
       }
@@ -270,7 +290,10 @@ export default function UnifiedUploader() {
     return Object.values(modules).map(mod => {
       let dataToDisplay = null;
       if (["SACLI_OK", "SARCLI_NOK", "GEM_NOK", "TAUX_20J", "SAV_PERF", "SAV_DELAI", "SECURISATION", "CCR", "SATCLI_SAV"].includes(mod.id)) {
-        if (fichier1Cache[mod.id]) dataToDisplay = fichier1Cache[mod.id].data;
+        if (fichier1Cache[mod.id]) {
+          // Ila kan fih details (b7al SACLI), n-affichiw l'GLOBAL f l'Vue Globale
+          dataToDisplay = fichier1Cache[mod.id].departments ? fichier1Cache[mod.id].data["GLOBAL"] : fichier1Cache[mod.id].data;
+        }
       } else if (["ZMD_AMII", "ZMD_RIP", "ZTD"].includes(mod.id)) {
         dataToDisplay = comboData[mod.id];
       } else if (mod.id === "TNH") {
@@ -306,8 +329,16 @@ export default function UnifiedUploader() {
   };
 
   const formatDataForUI = () => {
-    const raw = currentResult?.data;
-    if (!raw) return null;
+    const res = currentResult;
+    if (!res) return null;
+
+    // L'FIX HWA HNA: Ila kan l'format jdid dyal SACLI (fih departments)
+    if (res.departments && res.data[selectedDept]) {
+      return res.data[selectedDept];
+    }
+
+    // L'format l9dim
+    const raw = res.data;
     if (!isMultiGroup) return raw; 
     return {
       groupA: raw.groupA || { num: 0, denum: 0, resultat: 0, partDeMarche: 0, bonus: 0 },
@@ -320,7 +351,6 @@ export default function UnifiedUploader() {
   const showConfigButton = isFichier2Group || isFichier3Group || singleConfigKey !== null;
   const singleGridClass = isBonusActive && isFichier3Group ? "grid5" : isBonusActive ? "grid4" : "grid3";
 
-  // L'FIX HWA HNA: Zedt Number() bach formatage ykoun s7i7
   const pdmValueDisplay = isFichier3Group && uiData && !uiData.isComboUnlocked ? "🔒" : `${Number(uiData?.partDeMarche || 0).toFixed(2)}%`;
   const bonusValueDisplay = isFichier3Group && uiData && !uiData.isComboUnlocked ? "🔒" : `+${Number(uiData?.bonus || 0).toFixed(2)}%`;
 
@@ -455,6 +485,24 @@ export default function UnifiedUploader() {
               {!currentResult && (
                 <div className={styles.uploadSection}>
                   
+                  {/* L'FIX HWA HNA: Zedt les sélecteurs dyal Mois w Année */}
+                  {activeModule && (
+                    <div className={styles.timeSelector}>
+                      <div className={styles.timeGroup}>
+                        <label>Mois de Traitement</label>
+                        <select className={styles.timeSelect} value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)}>
+                          {[1,2,3,4,5,6,7,8,9,10,11,12].map(m => <option key={m} value={m}>{m}</option>)}
+                        </select>
+                      </div>
+                      <div className={styles.timeGroup}>
+                        <label>Année</label>
+                        <select className={styles.timeSelect} value={selectedYear} onChange={e => setSelectedYear(e.target.value)}>
+                          {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
                   {showConfigButton && (
                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '15px' }}>
                       <button onClick={() => setShowConfigPanel(!showConfigPanel)} className={`configBtn ${showConfigPanel ? 'active' : ''}`}>
@@ -619,6 +667,18 @@ export default function UnifiedUploader() {
                       Réinitialiser ({isFichier2Group ? "Fichier 2 (Tous)" : isFichier3Group ? "Fichier 3 (Tous)" : modules[activeModule]?.label})
                     </button>
                   </div>
+
+                  {/* L'FIX HWA HNA: Zedt l'Dropdown dyal l'Département */}
+                  {currentResult.departments && currentResult.departments.length > 0 && (
+                    <div className={styles.deptSelector}>
+                      <label>Filtrer par Département :</label>
+                      <select className={styles.deptSelect} value={selectedDept} onChange={e => setSelectedDept(e.target.value)}>
+                        {currentResult.departments.map(d => (
+                          <option key={d} value={d}>{d === "GLOBAL" ? "Vue Globale (Tous les départements)" : `Département ${d}`}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   
                   {isFichier3Group && !uiData.isComboUnlocked && (
                     <div className="lockBannerLight">
