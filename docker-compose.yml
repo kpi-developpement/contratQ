@@ -1,6 +1,25 @@
 version: '3.8'
 
 services:
+  # 1. BASE DE DONNÉES (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    container_name: contratq_postgres_prod
+    restart: always
+    environment:
+      # Docker ghay-creer had DB w l'User oumatiquement f l'awel lancement
+      - POSTGRES_DB=contratQualite
+      - POSTGRES_USER=kyntus_user
+      - POSTGRES_PASSWORD=kyntus_password
+    ports:
+      - "5432:5432"
+    volumes:
+      # 🛡️ RISK MANAGEMENT: Hada hwa l'coffre-fort. Data ghat-b9a hna wakha t-msse7 l'container
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - contratq-network
+
+  # 2. BACKEND (Spring Boot)
   backend:
     build:
       context: ./qualite
@@ -10,19 +29,19 @@ services:
     ports:
       - "7623:7623" 
     environment:
-      # 🛡️ Connexion l DB li kayna f l'serveur 10.10.10.25
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://10.10.10.25:5432/kyntus_db
+      # L'Backend ghay-hder m3a l'container 'db' f nfs l'réseau Docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/contratQualite
       - SPRING_DATASOURCE_USERNAME=kyntus_user
       - SPRING_DATASOURCE_PASSWORD=kyntus_password
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      # Limits pour les fichiers Excel kbar
       - SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE=500MB
       - SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE=500MB
+    depends_on:
+      - db
     deploy:
       resources:
         limits:
           memory: 1.5G 
-    # 🛡️ RISK MANAGEMENT: Log rotation bach l'serveur may3merch
     logging:
       driver: "json-file"
       options:
@@ -31,12 +50,13 @@ services:
     networks:
       - contratq-network
 
+  # 3. FRONTEND (Next.js)
   frontend:
     build:
       context: ./qualite-frontend
       dockerfile: Dockerfile
       args:
-        # L'Navigateur ghay-hder m3a l'IP d l'serveur direct
+        # L'Navigateur ghay-hder m3a l'IP d l'serveur
         - NEXT_PUBLIC_API_URL=http://10.10.10.25:7623
     container_name: contratq_frontend_prod
     restart: always
@@ -46,7 +66,6 @@ services:
       - PORT=8741
     depends_on:
       - backend
-    # 🛡️ RISK MANAGEMENT: Log rotation
     logging:
       driver: "json-file"
       options:
@@ -54,6 +73,10 @@ services:
         max-file: "3"
     networks:
       - contratq-network
+
+# Déclaration dyal l'Volume w l'Réseau
+volumes:
+  postgres_data:
 
 networks:
   contratq-network:

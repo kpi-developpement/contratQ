@@ -18,9 +18,11 @@ public class SacliController {
     @PostMapping("/analyze")
     public ResponseEntity<SacliResultDto> analyzeSacliExcel(
             @RequestParam("file") MultipartFile file,
-            @RequestParam(value = "config", required = false) String configJson) {
+            @RequestParam(value = "config", required = false) String configJson,
+            @RequestParam(value = "month") int month,
+            @RequestParam(value = "year") int year) {
 
         if (file.isEmpty()) return ResponseEntity.badRequest().build();
-        return ResponseEntity.ok(sacliService.processSacliExcel(file, configJson));
+        return ResponseEntity.ok(sacliService.processSacliExcel(file, configJson, month, year));
     }
 }
