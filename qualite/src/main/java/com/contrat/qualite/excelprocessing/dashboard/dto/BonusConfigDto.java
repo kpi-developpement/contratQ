@@ -21,7 +21,6 @@ public class BonusConfigDto {
     private SingleConfig gemNok;
     private SingleConfig taux20j;
 
-    // ZEDNA FICHIER 3 HNA
     private SingleConfig zmdAmii;
     private SingleConfig zmdRip;
     private SingleConfig ztd;
@@ -33,6 +32,7 @@ public class BonusConfigDto {
         private MinMax a;
         private MinMax b;
         private MinMax c;
+        private double bonusMax; // L'FIX HWA HNA: Zedt Bonus Max l Fichier 2
     }
 
     @Data

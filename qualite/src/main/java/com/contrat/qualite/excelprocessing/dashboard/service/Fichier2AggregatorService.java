@@ -133,7 +133,6 @@ public class Fichier2AggregatorService {
             throw new RuntimeException("Erreur f l'analyse: " + e.getMessage());
         }
 
-        // Nettoyage dyal DB 9bel l'insertion
         List<String> processToClear = Arrays.asList(
                 "TNH",
                 "PERF_RANG_1_A", "PERF_RANG_1_B", "PERF_RANG_1_C",
@@ -153,38 +152,34 @@ public class Fichier2AggregatorService {
             long totalDenumRang1 = s.p1DenA + s.p1DenB + s.p1DenC + s.hDenA + s.hDenB + s.hDenC + s.cDenA + s.cDenB + s.cDenC;
             long totalDenumRang2 = s.p2DenA + s.p2DenB + s.p2DenC;
 
-            // TNH
             TnhResultDto tnhDto = new TnhResultDto(s.tnhNum, s.tnhDenum, calc(s.tnhNum, s.tnhDenum));
             archivesToSave.add(buildArchive(month, year, dept, "TNH", s.tnhNum, s.tnhDenum, tnhDto.getResultat(), 0, 0));
 
-            // PERF RANG 1
-            PerfGroupDto p1A = buildPerfGroup(s.p1NumA, s.p1DenA, totalDenumRang1, config.getPlp().getA().getMin(), config.getPlp().getA().getMax());
-            PerfGroupDto p1B = buildPerfGroup(s.p1NumB, s.p1DenB, totalDenumRang1, config.getPlp().getB().getMin(), config.getPlp().getB().getMax());
-            PerfGroupDto p1C = buildPerfGroup(s.p1NumC, s.p1DenC, totalDenumRang1, config.getPlp().getC().getMin(), config.getPlp().getC().getMax());
+            // L'FIX HWA HNA: Kan-passiw l'bonusMax l kol processus
+            PerfGroupDto p1A = buildPerfGroup(s.p1NumA, s.p1DenA, totalDenumRang1, config.getPlp().getA().getMin(), config.getPlp().getA().getMax(), config.getPlp().getBonusMax());
+            PerfGroupDto p1B = buildPerfGroup(s.p1NumB, s.p1DenB, totalDenumRang1, config.getPlp().getB().getMin(), config.getPlp().getB().getMax(), config.getPlp().getBonusMax());
+            PerfGroupDto p1C = buildPerfGroup(s.p1NumC, s.p1DenC, totalDenumRang1, config.getPlp().getC().getMin(), config.getPlp().getC().getMax(), config.getPlp().getBonusMax());
             archivesToSave.add(buildArchive(month, year, dept, "PERF_RANG_1_A", s.p1NumA, s.p1DenA, p1A.getResultat(), p1A.getPartDeMarche(), p1A.getBonus()));
             archivesToSave.add(buildArchive(month, year, dept, "PERF_RANG_1_B", s.p1NumB, s.p1DenB, p1B.getResultat(), p1B.getPartDeMarche(), p1B.getBonus()));
             archivesToSave.add(buildArchive(month, year, dept, "PERF_RANG_1_C", s.p1NumC, s.p1DenC, p1C.getResultat(), p1C.getPartDeMarche(), p1C.getBonus()));
 
-            // HOTLINE RANG 1
-            HotlineGroupDto h1A = buildHotlineGroup(s.hNumA, s.hDenA, totalDenumRang1, config.getHotline().getA().getMin(), config.getHotline().getA().getMax());
-            HotlineGroupDto h1B = buildHotlineGroup(s.hNumB, s.hDenB, totalDenumRang1, config.getHotline().getB().getMin(), config.getHotline().getB().getMax());
-            HotlineGroupDto h1C = buildHotlineGroup(s.hNumC, s.hDenC, totalDenumRang1, config.getHotline().getC().getMin(), config.getHotline().getC().getMax());
+            HotlineGroupDto h1A = buildHotlineGroup(s.hNumA, s.hDenA, totalDenumRang1, config.getHotline().getA().getMin(), config.getHotline().getA().getMax(), config.getHotline().getBonusMax());
+            HotlineGroupDto h1B = buildHotlineGroup(s.hNumB, s.hDenB, totalDenumRang1, config.getHotline().getB().getMin(), config.getHotline().getB().getMax(), config.getHotline().getBonusMax());
+            HotlineGroupDto h1C = buildHotlineGroup(s.hNumC, s.hDenC, totalDenumRang1, config.getHotline().getC().getMin(), config.getHotline().getC().getMax(), config.getHotline().getBonusMax());
             archivesToSave.add(buildArchive(month, year, dept, "HOTLINE_RANG_1_A", s.hNumA, s.hDenA, h1A.getResultat(), h1A.getPartDeMarche(), h1A.getBonus()));
             archivesToSave.add(buildArchive(month, year, dept, "HOTLINE_RANG_1_B", s.hNumB, s.hDenB, h1B.getResultat(), h1B.getPartDeMarche(), h1B.getBonus()));
             archivesToSave.add(buildArchive(month, year, dept, "HOTLINE_RANG_1_C", s.hNumC, s.hDenC, h1C.getResultat(), h1C.getPartDeMarche(), h1C.getBonus()));
 
-            // CONSTRUCTION RANG 1
-            ConstructionGroupDto c1A = buildConstructionGroup(s.cNumA, s.cDenA, totalDenumRang1, config.getConstruction().getA().getMin(), config.getConstruction().getA().getMax());
-            ConstructionGroupDto c1B = buildConstructionGroup(s.cNumB, s.cDenB, totalDenumRang1, config.getConstruction().getB().getMin(), config.getConstruction().getB().getMax());
-            ConstructionGroupDto c1C = buildConstructionGroup(s.cNumC, s.cDenC, totalDenumRang1, config.getConstruction().getC().getMin(), config.getConstruction().getC().getMax());
+            ConstructionGroupDto c1A = buildConstructionGroup(s.cNumA, s.cDenA, totalDenumRang1, config.getConstruction().getA().getMin(), config.getConstruction().getA().getMax(), config.getConstruction().getBonusMax());
+            ConstructionGroupDto c1B = buildConstructionGroup(s.cNumB, s.cDenB, totalDenumRang1, config.getConstruction().getB().getMin(), config.getConstruction().getB().getMax(), config.getConstruction().getBonusMax());
+            ConstructionGroupDto c1C = buildConstructionGroup(s.cNumC, s.cDenC, totalDenumRang1, config.getConstruction().getC().getMin(), config.getConstruction().getC().getMax(), config.getConstruction().getBonusMax());
             archivesToSave.add(buildArchive(month, year, dept, "CONSTRUCTION_RANG_1_A", s.cNumA, s.cDenA, c1A.getResultat(), c1A.getPartDeMarche(), c1A.getBonus()));
             archivesToSave.add(buildArchive(month, year, dept, "CONSTRUCTION_RANG_1_B", s.cNumB, s.cDenB, c1B.getResultat(), c1B.getPartDeMarche(), c1B.getBonus()));
             archivesToSave.add(buildArchive(month, year, dept, "CONSTRUCTION_RANG_1_C", s.cNumC, s.cDenC, c1C.getResultat(), c1C.getPartDeMarche(), c1C.getBonus()));
 
-            // PERF RANG 2
-            PerfRang2GroupDto p2A = buildPerfRang2Group(s.p2NumA, s.p2DenA, totalDenumRang2, config.getRang2().getA().getMin(), config.getRang2().getA().getMax());
-            PerfRang2GroupDto p2B = buildPerfRang2Group(s.p2NumB, s.p2DenB, totalDenumRang2, config.getRang2().getB().getMin(), config.getRang2().getB().getMax());
-            PerfRang2GroupDto p2C = buildPerfRang2Group(s.p2NumC, s.p2DenC, totalDenumRang2, config.getRang2().getC().getMin(), config.getRang2().getC().getMax());
+            PerfRang2GroupDto p2A = buildPerfRang2Group(s.p2NumA, s.p2DenA, totalDenumRang2, config.getRang2().getA().getMin(), config.getRang2().getA().getMax(), config.getRang2().getBonusMax());
+            PerfRang2GroupDto p2B = buildPerfRang2Group(s.p2NumB, s.p2DenB, totalDenumRang2, config.getRang2().getB().getMin(), config.getRang2().getB().getMax(), config.getRang2().getBonusMax());
+            PerfRang2GroupDto p2C = buildPerfRang2Group(s.p2NumC, s.p2DenC, totalDenumRang2, config.getRang2().getC().getMin(), config.getRang2().getC().getMax(), config.getRang2().getBonusMax());
             archivesToSave.add(buildArchive(month, year, dept, "PERF_RANG_2_A", s.p2NumA, s.p2DenA, p2A.getResultat(), p2A.getPartDeMarche(), p2A.getBonus()));
             archivesToSave.add(buildArchive(month, year, dept, "PERF_RANG_2_B", s.p2NumB, s.p2DenB, p2B.getResultat(), p2B.getPartDeMarche(), p2B.getBonus()));
             archivesToSave.add(buildArchive(month, year, dept, "PERF_RANG_2_C", s.p2NumC, s.p2DenC, p2C.getResultat(), p2C.getPartDeMarche(), p2C.getBonus()));
@@ -218,10 +213,10 @@ public class Fichier2AggregatorService {
             } catch (Exception e) { log.error("Error parsing config", e); }
         }
         return BonusConfigDto.builder()
-                .plp(new BonusConfigDto.ZoneConfig(new BonusConfigDto.MinMax(93.0, 98.0), new BonusConfigDto.MinMax(90.0, 96.0), new BonusConfigDto.MinMax(86.0, 95.0)))
-                .hotline(new BonusConfigDto.ZoneConfig(new BonusConfigDto.MinMax(84.0, 91.0), new BonusConfigDto.MinMax(77.0, 88.0), new BonusConfigDto.MinMax(76.0, 83.0)))
-                .construction(new BonusConfigDto.ZoneConfig(new BonusConfigDto.MinMax(78.0, 86.0), new BonusConfigDto.MinMax(74.0, 84.0), new BonusConfigDto.MinMax(68.0, 78.0)))
-                .rang2(new BonusConfigDto.ZoneConfig(new BonusConfigDto.MinMax(67.0, 72.0), new BonusConfigDto.MinMax(63.0, 68.0), new BonusConfigDto.MinMax(57.0, 63.0)))
+                .plp(new BonusConfigDto.ZoneConfig(new BonusConfigDto.MinMax(93.0, 98.0), new BonusConfigDto.MinMax(90.0, 96.0), new BonusConfigDto.MinMax(86.0, 95.0), 4.0))
+                .hotline(new BonusConfigDto.ZoneConfig(new BonusConfigDto.MinMax(84.0, 91.0), new BonusConfigDto.MinMax(77.0, 88.0), new BonusConfigDto.MinMax(76.0, 83.0), 4.0))
+                .construction(new BonusConfigDto.ZoneConfig(new BonusConfigDto.MinMax(78.0, 86.0), new BonusConfigDto.MinMax(74.0, 84.0), new BonusConfigDto.MinMax(68.0, 78.0), 4.0))
+                .rang2(new BonusConfigDto.ZoneConfig(new BonusConfigDto.MinMax(67.0, 72.0), new BonusConfigDto.MinMax(63.0, 68.0), new BonusConfigDto.MinMax(57.0, 63.0), 4.0))
                 .build();
     }
 
@@ -235,8 +230,8 @@ public class Fichier2AggregatorService {
         return Math.round((((double) localDenum / globalDenum) * 100) * 100.0) / 100.0;
     }
 
-    private double calcBonus(double resultat, double partDeMarche, double pointMin, double pointMax) {
-        double bonusMax = 4.0;
+    // L'FIX HWA HNA: Zedt bonusMax f l'paramètre
+    private double calcBonus(double resultat, double partDeMarche, double pointMin, double pointMax, double bonusMax) {
         double partRatio = partDeMarche / 100.0;
         if (resultat <= pointMin) return 0.0;
         else if (resultat >= pointMax) return Math.round((bonusMax * partRatio) * 100.0) / 100.0;
@@ -246,23 +241,23 @@ public class Fichier2AggregatorService {
         }
     }
 
-    private PerfGroupDto buildPerfGroup(long num, long denum, long totalDenumGlobal, double min, double max) {
+    private PerfGroupDto buildPerfGroup(long num, long denum, long totalDenumGlobal, double min, double max, double bonusMax) {
         double res = calc(num, denum); double part = calcPart(denum, totalDenumGlobal);
-        return new PerfGroupDto(num, denum, res, part, calcBonus(res, part, min, max));
+        return new PerfGroupDto(num, denum, res, part, calcBonus(res, part, min, max, bonusMax));
     }
 
-    private HotlineGroupDto buildHotlineGroup(long num, long denum, long totalDenumGlobal, double min, double max) {
+    private HotlineGroupDto buildHotlineGroup(long num, long denum, long totalDenumGlobal, double min, double max, double bonusMax) {
         double res = calc(num, denum); double part = calcPart(denum, totalDenumGlobal);
-        return new HotlineGroupDto(num, denum, res, part, calcBonus(res, part, min, max));
+        return new HotlineGroupDto(num, denum, res, part, calcBonus(res, part, min, max, bonusMax));
     }
 
-    private ConstructionGroupDto buildConstructionGroup(long num, long denum, long totalDenumGlobal, double min, double max) {
+    private ConstructionGroupDto buildConstructionGroup(long num, long denum, long totalDenumGlobal, double min, double max, double bonusMax) {
         double res = calc(num, denum); double part = calcPart(denum, totalDenumGlobal);
-        return new ConstructionGroupDto(num, denum, res, part, calcBonus(res, part, min, max));
+        return new ConstructionGroupDto(num, denum, res, part, calcBonus(res, part, min, max, bonusMax));
     }
 
-    private PerfRang2GroupDto buildPerfRang2Group(long num, long denum, long totalDenumGlobal, double min, double max) {
+    private PerfRang2GroupDto buildPerfRang2Group(long num, long denum, long totalDenumGlobal, double min, double max, double bonusMax) {
         double res = calc(num, denum); double part = calcPart(denum, totalDenumGlobal);
-        return new PerfRang2GroupDto(num, denum, res, part, calcBonus(res, part, min, max));
+        return new PerfRang2GroupDto(num, denum, res, part, calcBonus(res, part, min, max, bonusMax));
     }
 }

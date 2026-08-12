@@ -3,6 +3,12 @@
 import React from "react";
 
 export default function GlobalViewModal({ onClose, globalRows }) {
+  
+  // L'FIX HWA HNA: Calcul dyal l'Total RACC Bonus
+  const raccRows = globalRows.filter(r => r.category === 'RACC');
+  const totalRaccBonus = raccRows.reduce((sum, row) => sum + (row.data?.bonus || 0), 0);
+  const finalScore = 90 + totalRaccBonus;
+
   return (
     <>
       <style dangerouslySetInnerHTML={{__html: `
@@ -41,7 +47,6 @@ export default function GlobalViewModal({ onClose, globalRows }) {
         @keyframes cyberFadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes cyberSlideUp { from { opacity: 0; transform: translateY(30px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
         
-        /* Custom scrollbar clean */
         .globalModalContent::-webkit-scrollbar { width: 6px; }
         .globalModalContent::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
         .globalModalContent::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.2); border-radius: 10px; }
@@ -54,7 +59,7 @@ export default function GlobalViewModal({ onClose, globalRows }) {
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
           
-          <h2 style={{ margin: '0 0 25px 0', color: '#fff', display: 'flex', alignParagraphs: 'center', gap: '12px', fontSize: '22px', fontWeight: '800', letterSpacing: '-0.5px' }}>
+          <h2 style={{ margin: '0 0 25px 0', color: '#fff', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '22px', fontWeight: '800', letterSpacing: '-0.5px' }}>
             <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#3b82f6" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
             Synthèse Opérationnelle Directe
           </h2>
@@ -70,7 +75,7 @@ export default function GlobalViewModal({ onClose, globalRows }) {
               </tr>
             </thead>
             <tbody>
-              {globalRows.filter(r => r.category === 'RACC').map(row => (
+              {raccRows.map(row => (
                 <tr key={row.id}>
                   <td style={{ fontWeight: '700', color: '#fff' }}>{row.label}</td>
                   <td style={{ color: '#94a3b8' }}>{row.data ? row.data.num?.toLocaleString() : <span style={{ color: '#334155' }}>—</span>}</td>
@@ -80,6 +85,19 @@ export default function GlobalViewModal({ onClose, globalRows }) {
                 </tr>
               ))}
             </tbody>
+            {/* L'FIX HWA HNA: Ligne VIP dyal l'Total RACC */}
+            <tfoot>
+              <tr style={{ backgroundColor: 'rgba(16, 185, 129, 0.05)' }}>
+                <td colSpan="4" style={{ textAlign: 'right', fontWeight: '800', color: '#fff', fontSize: '16px', borderBottomLeftRadius: '8px' }}>
+                  SCORE DE BASE (90%) + TOTAL BONUS RACC (+{totalRaccBonus.toFixed(2)}%) =
+                </td>
+                <td style={{ fontWeight: '900', fontSize: '18px', borderBottomRightRadius: '8px' }}>
+                  <span className="cyberBadge" style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', boxShadow: '0 0 15px rgba(16, 185, 129, 0.4)', border: 'none' }}>
+                    {finalScore.toFixed(2)}%
+                  </span>
+                </td>
+              </tr>
+            </tfoot>
           </table>
 
           <div className="modalSubTitle" style={{ color: '#8b5cf6' }}>

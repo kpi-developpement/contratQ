@@ -23,11 +23,12 @@ const API_ENDPOINTS_ISOLATED = {
   SATCLI_SAV: "/api/v1/excel/satclisav/analyze",
 };
 
+// L'FIX HWA HNA: Zedt bonusMax l Fichier 2
 const INITIAL_CONFIG = {
-  plp: { a: { min: 93.0, max: 98.0 }, b: { min: 90.0, max: 96.0 }, c: { min: 86.0, max: 95.0 } },
-  hotline: { a: { min: 84.0, max: 91.0 }, b: { min: 77.0, max: 88.0 }, c: { min: 76.0, max: 83.0 } },
-  construction: { a: { min: 78.0, max: 86.0 }, b: { min: 74.0, max: 84.0 }, c: { min: 68.0, max: 78.0 } },
-  rang2: { a: { min: 67.0, max: 72.0 }, b: { min: 63.0, max: 68.0 }, c: { min: 57.0, max: 63.0 } },
+  plp: { a: { min: 93.0, max: 98.0 }, b: { min: 90.0, max: 96.0 }, c: { min: 86.0, max: 95.0 }, bonusMax: 4.0 },
+  hotline: { a: { min: 84.0, max: 91.0 }, b: { min: 77.0, max: 88.0 }, c: { min: 76.0, max: 83.0 }, bonusMax: 4.0 },
+  construction: { a: { min: 78.0, max: 86.0 }, b: { min: 74.0, max: 84.0 }, c: { min: 68.0, max: 78.0 }, bonusMax: 4.0 },
+  rang2: { a: { min: 67.0, max: 72.0 }, b: { min: 63.0, max: 68.0 }, c: { min: 57.0, max: 63.0 }, bonusMax: 4.0 },
   sacli: { min: 85.0, max: 95.0, bonusMax: 2.0 },
   sarcli: { min: 30.0, max: 55.0, bonusMax: 1.0 },
   gemNok: { min: 5.0, max: 2.0, bonusMax: 2.0 },
@@ -58,7 +59,6 @@ export default function UnifiedUploader() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   
-  // L'FIX HWA HNA: Multi-Select State
   const [selectedDepts, setSelectedDepts] = useState(["GLOBAL"]);
   const [isDeptDropdownOpen, setIsDeptDropdownOpen] = useState(false);
 
@@ -111,9 +111,6 @@ export default function UnifiedUploader() {
     return baseBonus * (pdm / 100);
   };
 
-  // ==========================================
-  // 🚀 L'ALGORITHME D'AGRÉGATION DYNAMIQUE
-  // ==========================================
   const aggregateRawData = (cacheData) => {
     if (!cacheData || !cacheData.data) return null;
     if (selectedDepts.includes("GLOBAL") || selectedDepts.length === 0) return cacheData.data["GLOBAL"];
@@ -179,8 +176,8 @@ export default function UnifiedUploader() {
     const calcPart = (ld, gd) => gd > 0 ? (ld/gd)*100 : 0;
     const calcBonus = (res, part, conf) => {
        if (res <= conf.min) return 0;
-       if (res >= conf.max) return 4.0 * (part/100);
-       return (((res - conf.min) / (conf.max - conf.min)) * 4.0) * (part/100);
+       if (res >= conf.max) return conf.bonusMax * (part/100);
+       return (((res - conf.min) / (conf.max - conf.min)) * conf.bonusMax) * (part/100);
     };
 
     const buildGrp = (raw, totalD, conf) => {
@@ -296,6 +293,13 @@ export default function UnifiedUploader() {
         ...prev[process],
         [zone]: { ...prev[process][zone], [minOrMax]: parseFloat(value) || 0 }
       }
+    }));
+  };
+
+  const handleProcessConfigChange = (process, key, value) => {
+    setBonusConfig(prev => ({
+      ...prev,
+      [process]: { ...prev[process], [key]: parseFloat(value) || 0 }
     }));
   };
 
@@ -545,7 +549,6 @@ export default function UnifiedUploader() {
   const pdmValueDisplay = isFichier3Group && uiData && !uiData.isComboUnlocked ? "🔒" : `${Number(uiData?.partDeMarche || 0).toFixed(2)}%`;
   const bonusValueDisplay = isFichier3Group && uiData && !uiData.isComboUnlocked ? "🔒" : `+${Number(uiData?.bonus || 0).toFixed(2)}%`;
 
-  // L'FIX HWA HNA: Fonction bach n-gériw l'Multi-Select
   const toggleDept = (dept) => {
     if (dept === "GLOBAL") {
       setSelectedDepts(["GLOBAL"]);
@@ -620,7 +623,6 @@ export default function UnifiedUploader() {
         .fetchBtn:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3); }
         .fetchBtn:active { transform: translateY(0); }
 
-        /* L'FIX HWA HNA: Multi-Select CSS */
         .multiSelectContainer { position: relative; flex: 1; }
         .multiSelectHeader { background: #FFFFFF; border: 1px solid #93C5FD; padding: 12px 15px; border-radius: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 700; color: #1E3A8A; transition: all 0.2s ease; }
         .multiSelectHeader:hover { border-color: #3B82F6; }
@@ -694,6 +696,105 @@ export default function UnifiedUploader() {
               </div>
             </div>
 
+            {/* L'FIX HWA HNA: L'Panneau dyal l'Config wlla dima bayn fo9 l'Module Selector */}
+            {showConfigButton && (
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '15px' }}>
+                <button onClick={() => setShowConfigPanel(!showConfigPanel)} className={`configBtn ${showConfigPanel ? 'active' : ''}`}>
+                  <span style={{ width: '18px', display: 'flex' }}><IconSettings/></span>
+                  {showConfigPanel ? 'Fermer les paramètres' : '⚙️ Paramétrer les Bonus'}
+                </button>
+              </div>
+            )}
+
+            {showConfigPanel && showConfigButton && (
+              <div className="configPanel">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                  <div style={{ padding: '8px', background: '#eff6ff', borderRadius: '8px', color: '#3b82f6' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                  </div>
+                  <h4 style={{ margin: 0, color: '#0f172a', fontSize: '1.1rem' }}>
+                    Ajustement Dynamique des Seuils (%) 
+                    {(activeModule === 'GEM_NOK' || isFichier3Group) && <span style={{ color: '#ef4444', fontSize: '13px', marginLeft: '10px', padding: '4px 8px', background: '#fee2e2', borderRadius: '4px' }}>Logique Inverse Activée</span>}
+                  </h4>
+                </div>
+                
+                {isFichier2Group && (
+                  <table className="configTable">
+                    <thead>
+                      <tr>
+                        <th rowSpan="2" style={{ textAlign: 'left', verticalAlign: 'middle' }}>Processus</th>
+                        <th colSpan="2" style={{ color: '#3b82f6' }}>ZONE A</th>
+                        <th colSpan="2" style={{ color: '#8b5cf6' }}>ZONE B</th>
+                        <th colSpan="2" style={{ color: '#10b981' }}>ZONE C</th>
+                        <th rowSpan="2" style={{ color: '#F59E0B', verticalAlign: 'middle' }}>Bonus MAX</th>
+                      </tr>
+                      <tr>
+                        <th>MIN</th><th>MAX</th><th>MIN</th><th>MAX</th><th>MIN</th><th>MAX</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {['plp', 'hotline', 'construction', 'rang2'].map((process, idx) => (
+                        <tr key={process} style={{ background: idx % 2 === 0 ? '#fff' : '#f8fafc', borderRadius: '8px' }}>
+                          <td style={{ fontWeight: '800', textTransform: 'uppercase', color: '#334155', textAlign: 'left', paddingLeft: '15px' }}>{process === 'rang2' ? 'GLOBAL RANG 2' : process}</td>
+                          {['a', 'b', 'c'].map(zone => (
+                            <React.Fragment key={`${process}-${zone}`}>
+                              <td><input type="number" step="0.1" className="configInput" value={bonusConfig[process][zone].min} onChange={(e) => handleConfigChange(process, zone, 'min', e.target.value)} /></td>
+                              <td><input type="number" step="0.1" className="configInput" value={bonusConfig[process][zone].max} onChange={(e) => handleConfigChange(process, zone, 'max', e.target.value)} /></td>
+                            </React.Fragment>
+                          ))}
+                          <td><input type="number" step="0.1" className="configInput" style={{ borderColor: '#F59E0B', color: '#F59E0B' }} value={bonusConfig[process].bonusMax} onChange={(e) => handleProcessConfigChange(process, 'bonusMax', e.target.value)} /></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+
+                {isFichier3Group && (
+                  <table className="configTable" style={{ width: '80%', margin: '0 auto' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ textAlign: 'left' }}>Indicateur</th>
+                        <th style={{ color: '#ef4444' }}>Point MIN (L'khayb)</th>
+                        <th style={{ color: '#10b981' }}>Point MAX (L'mzyan)</th>
+                        <th style={{ color: '#F59E0B' }}>Bonus MAX</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[{key: 'zmdAmii', label: 'ZMD AMII'}, {key: 'zmdRip', label: 'ZMD RIP'}, {key: 'ztd', label: 'ZTD'}].map((item, idx) => (
+                        <tr key={item.key} style={{ background: idx % 2 === 0 ? '#fff' : '#f8fafc' }}>
+                          <td style={{ fontWeight: '800', color: '#334155', textAlign: 'left', paddingLeft: '15px' }}>{item.label}</td>
+                          <td><input type="number" step="0.1" className="configInput" value={bonusConfig[item.key].min} onChange={(e) => handleSingleConfigChange(item.key, 'min', e.target.value)} /></td>
+                          <td><input type="number" step="0.1" className="configInput" value={bonusConfig[item.key].max} onChange={(e) => handleSingleConfigChange(item.key, 'max', e.target.value)} /></td>
+                          <td><input type="number" step="0.1" className="configInput" style={{ borderColor: '#F59E0B', color: '#F59E0B' }} value={bonusConfig[item.key].bonusMax} onChange={(e) => handleSingleConfigChange(item.key, 'bonusMax', e.target.value)} /></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+
+                {singleConfigKey && !isFichier3Group && (
+                  <div style={{ display: 'flex', gap: '30px', justifyContent: 'center', background: '#f8fafc', padding: '20px', borderRadius: '12px' }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: activeModule === 'GEM_NOK' ? '#ef4444' : '#64748b', marginBottom: '8px' }}>
+                        {activeModule === 'GEM_NOK' ? 'Point MIN (Lkhayb)' : 'Point MIN'}
+                      </label>
+                      <input type="number" step="0.1" className="configInput" value={bonusConfig[singleConfigKey].min} onChange={(e) => handleSingleConfigChange(singleConfigKey, 'min', e.target.value)} />
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: activeModule === 'GEM_NOK' ? '#10b981' : '#64748b', marginBottom: '8px' }}>
+                        {activeModule === 'GEM_NOK' ? 'Point MAX (Lmzyan)' : 'Point MAX'}
+                      </label>
+                      <input type="number" step="0.1" className="configInput" value={bonusConfig[singleConfigKey].max} onChange={(e) => handleSingleConfigChange(singleConfigKey, 'max', e.target.value)} />
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#F59E0B', marginBottom: '8px' }}>Bonus MAX</label>
+                      <input type="number" step="0.1" className="configInput" style={{ borderColor: '#F59E0B', color: '#F59E0B' }} value={bonusConfig[singleConfigKey].bonusMax} onChange={(e) => handleSingleConfigChange(singleConfigKey, 'bonusMax', e.target.value)} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {successMsg && (
               <div style={{ background: '#ecfdf5', color: '#059669', padding: '12px 20px', borderRadius: '12px', border: '1px solid #a7f3d0', marginBottom: '20px', fontWeight: '600', textAlign: 'center' }}>
                 {successMsg}
@@ -737,103 +838,6 @@ export default function UnifiedUploader() {
               
               {!currentResult && (
                 <div className={styles.uploadSection}>
-
-                  {showConfigButton && (
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '15px' }}>
-                      <button onClick={() => setShowConfigPanel(!showConfigPanel)} className={`configBtn ${showConfigPanel ? 'active' : ''}`}>
-                        <span style={{ width: '18px', display: 'flex' }}><IconSettings/></span>
-                        {showConfigPanel ? 'Fermer les paramètres' : '⚙️ Paramétrer les Bonus'}
-                      </button>
-                    </div>
-                  )}
-
-                  {showConfigPanel && showConfigButton && (
-                    <div className="configPanel">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                        <div style={{ padding: '8px', background: '#eff6ff', borderRadius: '8px', color: '#3b82f6' }}>
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                        </div>
-                        <h4 style={{ margin: 0, color: '#0f172a', fontSize: '1.1rem' }}>
-                          Ajustement Dynamique des Seuils (%) 
-                          {(activeModule === 'GEM_NOK' || isFichier3Group) && <span style={{ color: '#ef4444', fontSize: '13px', marginLeft: '10px', padding: '4px 8px', background: '#fee2e2', borderRadius: '4px' }}>Logique Inverse Activée</span>}
-                        </h4>
-                      </div>
-                      
-                      {isFichier2Group && (
-                        <table className="configTable">
-                          <thead>
-                            <tr>
-                              <th style={{ textAlign: 'left' }}>Processus</th>
-                              <th colSpan="2" style={{ color: '#3b82f6' }}>ZONE A</th>
-                              <th colSpan="2" style={{ color: '#8b5cf6' }}>ZONE B</th>
-                              <th colSpan="2" style={{ color: '#10b981' }}>ZONE C</th>
-                            </tr>
-                            <tr>
-                              <th></th><th>MIN</th><th>MAX</th><th>MIN</th><th>MAX</th><th>MIN</th><th>MAX</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {['plp', 'hotline', 'construction', 'rang2'].map((process, idx) => (
-                              <tr key={process} style={{ background: idx % 2 === 0 ? '#fff' : '#f8fafc', borderRadius: '8px' }}>
-                                <td style={{ fontWeight: '800', textTransform: 'uppercase', color: '#334155', textAlign: 'left', paddingLeft: '15px' }}>{process === 'rang2' ? 'GLOBAL RANG 2' : process}</td>
-                                {['a', 'b', 'c'].map(zone => (
-                                  <React.Fragment key={`${process}-${zone}`}>
-                                    <td><input type="number" step="0.1" className="configInput" value={bonusConfig[process][zone].min} onChange={(e) => handleConfigChange(process, zone, 'min', e.target.value)} /></td>
-                                    <td><input type="number" step="0.1" className="configInput" value={bonusConfig[process][zone].max} onChange={(e) => handleConfigChange(process, zone, 'max', e.target.value)} /></td>
-                                  </React.Fragment>
-                                ))}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      )}
-
-                      {isFichier3Group && (
-                        <table className="configTable" style={{ width: '80%', margin: '0 auto' }}>
-                          <thead>
-                            <tr>
-                              <th style={{ textAlign: 'left' }}>Indicateur</th>
-                              <th style={{ color: '#ef4444' }}>Point MIN (L'khayb)</th>
-                              <th style={{ color: '#10b981' }}>Point MAX (L'mzyan)</th>
-                              <th style={{ color: '#F59E0B' }}>Bonus MAX</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {[{key: 'zmdAmii', label: 'ZMD AMII'}, {key: 'zmdRip', label: 'ZMD RIP'}, {key: 'ztd', label: 'ZTD'}].map((item, idx) => (
-                              <tr key={item.key} style={{ background: idx % 2 === 0 ? '#fff' : '#f8fafc' }}>
-                                <td style={{ fontWeight: '800', color: '#334155', textAlign: 'left', paddingLeft: '15px' }}>{item.label}</td>
-                                <td><input type="number" step="0.1" className="configInput" value={bonusConfig[item.key].min} onChange={(e) => handleSingleConfigChange(item.key, 'min', e.target.value)} /></td>
-                                <td><input type="number" step="0.1" className="configInput" value={bonusConfig[item.key].max} onChange={(e) => handleSingleConfigChange(item.key, 'max', e.target.value)} /></td>
-                                <td><input type="number" step="0.1" className="configInput" style={{ borderColor: '#F59E0B', color: '#F59E0B' }} value={bonusConfig[item.key].bonusMax} onChange={(e) => handleSingleConfigChange(item.key, 'bonusMax', e.target.value)} /></td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      )}
-
-                      {singleConfigKey && !isFichier3Group && (
-                        <div style={{ display: 'flex', gap: '30px', justifyContent: 'center', background: '#f8fafc', padding: '20px', borderRadius: '12px' }}>
-                          <div style={{ textAlign: 'center' }}>
-                            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: activeModule === 'GEM_NOK' ? '#ef4444' : '#64748b', marginBottom: '8px' }}>
-                              {activeModule === 'GEM_NOK' ? 'Point MIN (Lkhayb)' : 'Point MIN'}
-                            </label>
-                            <input type="number" step="0.1" className="configInput" value={bonusConfig[singleConfigKey].min} onChange={(e) => handleSingleConfigChange(singleConfigKey, 'min', e.target.value)} />
-                          </div>
-                          <div style={{ textAlign: 'center' }}>
-                            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: activeModule === 'GEM_NOK' ? '#10b981' : '#64748b', marginBottom: '8px' }}>
-                              {activeModule === 'GEM_NOK' ? 'Point MAX (Lmzyan)' : 'Point MAX'}
-                            </label>
-                            <input type="number" step="0.1" className="configInput" value={bonusConfig[singleConfigKey].max} onChange={(e) => handleSingleConfigChange(singleConfigKey, 'max', e.target.value)} />
-                          </div>
-                          <div style={{ textAlign: 'center' }}>
-                            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#F59E0B', marginBottom: '8px' }}>Bonus MAX</label>
-                            <input type="number" step="0.1" className="configInput" style={{ borderColor: '#F59E0B', color: '#F59E0B' }} value={bonusConfig[singleConfigKey].bonusMax} onChange={(e) => handleSingleConfigChange(singleConfigKey, 'bonusMax', e.target.value)} />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
                   {!activeModule ? (
                     <div className={styles.placeholderMessage} style={{ marginTop: '20px' }}>
                       <svg className={styles.placeholderIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -903,7 +907,6 @@ export default function UnifiedUploader() {
                     </button>
                   </div>
 
-                  {/* L'FIX HWA HNA: Multi-Select Dropdown Custom */}
                   {currentResult.departments && currentResult.departments.length > 0 && (
                     <div className={styles.deptSelector} style={{ position: 'relative', overflow: 'visible' }}>
                       <label>Filtrer par Département(s) :</label>
