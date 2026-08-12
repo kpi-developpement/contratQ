@@ -8,7 +8,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
+// L'FIX HWA HNA: Bddelna origins = "*" b originPatterns = "*"
+@CrossOrigin(originPatterns = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/v1/export")
 @RequiredArgsConstructor
