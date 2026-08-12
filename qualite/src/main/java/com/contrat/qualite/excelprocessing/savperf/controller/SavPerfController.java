@@ -16,8 +16,11 @@ public class SavPerfController {
     private final SavPerfService savPerfService;
 
     @PostMapping("/analyze")
-    public ResponseEntity<SavPerfResultDto> analyzeSavPerf(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<SavPerfResultDto> analyzeSavPerf(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "month") int month,
+            @RequestParam(value = "year") int year) {
         if (file.isEmpty()) return ResponseEntity.badRequest().build();
-        return ResponseEntity.ok(savPerfService.processSavPerfExcel(file));
+        return ResponseEntity.ok(savPerfService.processSavPerfExcel(file, month, year));
     }
 }

@@ -18,9 +18,11 @@ public class SarcliController {
     @PostMapping("/analyze")
     public ResponseEntity<SarcliResultDto> analyzeSarcliExcel(
             @RequestParam("file") MultipartFile file,
-            @RequestParam(value = "config", required = false) String configJson) {
+            @RequestParam(value = "config", required = false) String configJson,
+            @RequestParam(value = "month") int month,
+            @RequestParam(value = "year") int year) {
 
         if (file.isEmpty()) return ResponseEntity.badRequest().build();
-        return ResponseEntity.ok(sarcliService.processSarcliExcel(file, configJson));
+        return ResponseEntity.ok(sarcliService.processSarcliExcel(file, configJson, month, year));
     }
 }

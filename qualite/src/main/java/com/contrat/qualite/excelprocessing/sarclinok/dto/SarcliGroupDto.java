@@ -4,12 +4,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.util.Map;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SarcliResultDto {
-    private Map<String, SarcliGroupDto> details;
+public class SarcliGroupDto {
+    private long num;
+    private long denum;
+    private double resultat;
+    private double bonus;
 }

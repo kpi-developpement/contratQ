@@ -4,12 +4,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.util.Map;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Taux20jResultDto {
-    private Map<String, Taux20jGroupDto> details;
+public class Taux20jGroupDto {
+    private long num;
+    private long denum;
+    private double resultat;
+    private double bonus;
 }

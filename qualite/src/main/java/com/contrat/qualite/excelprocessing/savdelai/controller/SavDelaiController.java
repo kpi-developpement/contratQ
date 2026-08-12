@@ -16,8 +16,11 @@ public class SavDelaiController {
     private final SavDelaiService savDelaiService;
 
     @PostMapping("/analyze")
-    public ResponseEntity<SavDelaiResultDto> analyzeSavDelai(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<SavDelaiResultDto> analyzeSavDelai(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "month") int month,
+            @RequestParam(value = "year") int year) {
         if (file.isEmpty()) return ResponseEntity.badRequest().build();
-        return ResponseEntity.ok(savDelaiService.processSavDelaiExcel(file));
+        return ResponseEntity.ok(savDelaiService.processSavDelaiExcel(file, month, year));
     }
 }

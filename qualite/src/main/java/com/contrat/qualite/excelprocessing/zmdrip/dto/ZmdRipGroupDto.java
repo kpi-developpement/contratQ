@@ -4,12 +4,15 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.util.Map;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ZmdRipResultDto {
-    private Map<String, ZmdRipGroupDto> details;
+public class ZmdRipGroupDto {
+    private long num;
+    private long denum;
+    private double resultat;
+    private double partDeMarche;
+    private double bonus;
 }

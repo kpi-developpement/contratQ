@@ -16,8 +16,11 @@ public class ZmdAmiiController {
     private final ZmdAmiiService zmdAmiiService;
 
     @PostMapping("/analyze")
-    public ResponseEntity<ZmdAmiiResultDto> analyzeZmdAmii(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<ZmdAmiiResultDto> analyzeZmdAmii(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "month") int month,
+            @RequestParam(value = "year") int year) {
         if (file.isEmpty()) return ResponseEntity.badRequest().build();
-        return ResponseEntity.ok(zmdAmiiService.processZmdAmiiExcel(file));
+        return ResponseEntity.ok(zmdAmiiService.processZmdAmiiExcel(file, month, year));
     }
 }

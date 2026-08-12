@@ -16,8 +16,11 @@ public class ZtdController {
     private final ZtdService ztdService;
 
     @PostMapping("/analyze")
-    public ResponseEntity<ZtdResultDto> analyzeZtd(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<ZtdResultDto> analyzeZtd(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "month") int month,
+            @RequestParam(value = "year") int year) {
         if (file.isEmpty()) return ResponseEntity.badRequest().build();
-        return ResponseEntity.ok(ztdService.processZtdExcel(file));
+        return ResponseEntity.ok(ztdService.processZtdExcel(file, month, year));
     }
 }

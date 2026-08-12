@@ -16,8 +16,11 @@ public class SecurisationController {
     private final SecurisationService securisationService;
 
     @PostMapping("/analyze")
-    public ResponseEntity<SecurisationResultDto> analyzeSecurisation(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<SecurisationResultDto> analyzeSecurisation(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "month") int month,
+            @RequestParam(value = "year") int year) {
         if (file.isEmpty()) return ResponseEntity.badRequest().build();
-        return ResponseEntity.ok(securisationService.processSecurisationExcel(file));
+        return ResponseEntity.ok(securisationService.processSecurisationExcel(file, month, year));
     }
 }

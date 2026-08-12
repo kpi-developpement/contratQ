@@ -4,12 +4,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.util.Map;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SavDelaiResultDto {
-    private Map<String, SavDelaiGroupDto> details;
+public class SavDelaiGroupDto {
+    private long num;
+    private long denum;
+    private double resultat;
+    private double bonus;
 }

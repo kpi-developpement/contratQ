@@ -16,8 +16,11 @@ public class ZmdRipController {
     private final ZmdRipService zmdRipService;
 
     @PostMapping("/analyze")
-    public ResponseEntity<ZmdRipResultDto> analyzeZmdRip(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<ZmdRipResultDto> analyzeZmdRip(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "month") int month,
+            @RequestParam(value = "year") int year) {
         if (file.isEmpty()) return ResponseEntity.badRequest().build();
-        return ResponseEntity.ok(zmdRipService.processZmdRipExcel(file));
+        return ResponseEntity.ok(zmdRipService.processZmdRipExcel(file, month, year));
     }
 }

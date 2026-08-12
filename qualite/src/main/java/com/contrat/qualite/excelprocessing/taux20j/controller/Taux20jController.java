@@ -18,9 +18,11 @@ public class Taux20jController {
     @PostMapping("/analyze")
     public ResponseEntity<Taux20jResultDto> analyzeTaux20j(
             @RequestParam("file") MultipartFile file,
-            @RequestParam(value = "config", required = false) String configJson) {
+            @RequestParam(value = "config", required = false) String configJson,
+            @RequestParam(value = "month") int month,
+            @RequestParam(value = "year") int year) {
 
         if (file.isEmpty()) return ResponseEntity.badRequest().build();
-        return ResponseEntity.ok(taux20jService.processTaux20jExcel(file, configJson));
+        return ResponseEntity.ok(taux20jService.processTaux20jExcel(file, configJson, month, year));
     }
 }

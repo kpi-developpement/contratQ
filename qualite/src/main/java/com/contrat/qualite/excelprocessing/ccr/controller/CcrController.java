@@ -16,8 +16,11 @@ public class CcrController {
     private final CcrService ccrService;
 
     @PostMapping("/analyze")
-    public ResponseEntity<CcrResultDto> analyzeCcr(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<CcrResultDto> analyzeCcr(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "month") int month,
+            @RequestParam(value = "year") int year) {
         if (file.isEmpty()) return ResponseEntity.badRequest().build();
-        return ResponseEntity.ok(ccrService.processCcrExcel(file));
+        return ResponseEntity.ok(ccrService.processCcrExcel(file, month, year));
     }
 }

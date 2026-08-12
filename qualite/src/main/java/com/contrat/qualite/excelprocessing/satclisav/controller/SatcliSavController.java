@@ -16,8 +16,11 @@ public class SatcliSavController {
     private final SatcliSavService satcliSavService;
 
     @PostMapping("/analyze")
-    public ResponseEntity<SatcliSavResultDto> analyzeSatcliSav(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<SatcliSavResultDto> analyzeSatcliSav(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "month") int month,
+            @RequestParam(value = "year") int year) {
         if (file.isEmpty()) return ResponseEntity.badRequest().build();
-        return ResponseEntity.ok(satcliSavService.processSatcliSavExcel(file));
+        return ResponseEntity.ok(satcliSavService.processSatcliSavExcel(file, month, year));
     }
 }

@@ -48,16 +48,19 @@ export default function UnifiedUploader() {
   const [isGlobalDragging, setIsGlobalDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
   const fileInputRef = useRef(null);
 
   const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [bonusConfig, setBonusConfig] = useState(INITIAL_CONFIG);
   const [showGlobalModal, setShowGlobalModal] = useState(false);
 
-  // L'FIX HWA HNA: State l'Mois, l'Année, w l'Département
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedDept, setSelectedDept] = useState("GLOBAL");
+  
+  // L'FIX HWA HNA: Multi-Select State
+  const [selectedDepts, setSelectedDepts] = useState(["GLOBAL"]);
+  const [isDeptDropdownOpen, setIsDeptDropdownOpen] = useState(false);
 
   const modules = {
     SACLI_OK: { id: 'SACLI_OK', category: 'RACC', label: 'SACLI OK', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg> },
@@ -82,18 +85,17 @@ export default function UnifiedUploader() {
   const isFichier3Group = ["ZMD_AMII", "ZMD_RIP", "ZTD"].includes(activeModule);
   const isIsolatedUpload = ["SACLI_OK", "SARCLI_NOK", "GEM_NOK", "TAUX_20J", "SAV_PERF", "SAV_DELAI", "SECURISATION", "CCR", "SATCLI_SAV", "ZMD_AMII", "ZMD_RIP", "ZTD"].includes(activeModule);
   const isFichier2Group = !isIsolatedUpload;
-  
   const isMultiGroup = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1", "PERF_RANG_2"].includes(activeModule);
   const isBonusActive = ["PERF_RANG_1", "HOTLINE_RANG_1", "CONSTRUCTION_RANG_1", "PERF_RANG_2", "SACLI_OK", "SARCLI_NOK", "GEM_NOK", "TAUX_20J", "ZMD_AMII", "ZMD_RIP", "ZTD"].includes(activeModule);
 
-  const getSingleConfigKey = () => {
-    if (activeModule === 'SACLI_OK') return 'sacli';
-    if (activeModule === 'SARCLI_NOK') return 'sarcli';
-    if (activeModule === 'GEM_NOK') return 'gemNok';
-    if (activeModule === 'TAUX_20J') return 'taux20j';
+  const getSingleConfigKey = (modId) => {
+    if (modId === 'SACLI_OK') return 'sacli';
+    if (modId === 'SARCLI_NOK') return 'sarcli';
+    if (modId === 'GEM_NOK') return 'gemNok';
+    if (modId === 'TAUX_20J') return 'taux20j';
     return null;
   };
-  const singleConfigKey = getSingleConfigKey();
+  const singleConfigKey = getSingleConfigKey(activeModule);
 
   const computeBonus = (rawResult, conf, pdm) => {
     let baseBonus = 0;
@@ -109,12 +111,116 @@ export default function UnifiedUploader() {
     return baseBonus * (pdm / 100);
   };
 
-  const getComboData = () => {
-    const amii = fichier1Cache['ZMD_AMII']?.data;
-    const rip = fichier1Cache['ZMD_RIP']?.data;
-    const ztd = fichier1Cache['ZTD']?.data;
+  // ==========================================
+  // 🚀 L'ALGORITHME D'AGRÉGATION DYNAMIQUE
+  // ==========================================
+  const aggregateRawData = (cacheData) => {
+    if (!cacheData || !cacheData.data) return null;
+    if (selectedDepts.includes("GLOBAL") || selectedDepts.length === 0) return cacheData.data["GLOBAL"];
+    
+    let sumNum = 0, sumDenum = 0;
+    selectedDepts.forEach(d => {
+      if (cacheData.data[d]) {
+        sumNum += cacheData.data[d].num || 0;
+        sumDenum += cacheData.data[d].denum || 0;
+      }
+    });
+    const res = sumDenum > 0 ? (sumNum / sumDenum) * 100 : 0;
+    return { num: sumNum, denum: sumDenum, resultat: res };
+  };
 
-    const isComboUnlocked = !!(amii && rip && ztd);
+  const aggregateIsolated = (cacheData, moduleKey) => {
+    if (!cacheData || !cacheData.data) return null;
+    if (selectedDepts.includes("GLOBAL") || selectedDepts.length === 0) return cacheData.data["GLOBAL"];
+
+    const raw = aggregateRawData(cacheData);
+    let bonus = 0;
+    const confKey = getSingleConfigKey(moduleKey);
+    if (confKey && bonusConfig[confKey]) {
+       bonus = computeBonus(raw.resultat, bonusConfig[confKey], 100);
+    }
+    return { num: raw.num, denum: raw.denum, resultat: Number(raw.resultat.toFixed(2)), bonus: Number(bonus.toFixed(2)) };
+  };
+
+  const aggregateFichier2 = (f2Data) => {
+    if (!f2Data || !f2Data.data) return null;
+    if (selectedDepts.includes("GLOBAL") || selectedDepts.length === 0) return f2Data.data["GLOBAL"];
+
+    const sums = {
+      tnh: {num:0, denum:0},
+      perfRang1: { groupA:{num:0, denum:0}, groupB:{num:0, denum:0}, groupC:{num:0, denum:0} },
+      hotlineRang1: { groupA:{num:0, denum:0}, groupB:{num:0, denum:0}, groupC:{num:0, denum:0} },
+      constructionRang1: { groupA:{num:0, denum:0}, groupB:{num:0, denum:0}, groupC:{num:0, denum:0} },
+      perfRang2: { groupA:{num:0, denum:0}, groupB:{num:0, denum:0}, groupC:{num:0, denum:0} }
+    };
+
+    selectedDepts.forEach(d => {
+      const deptData = f2Data.data[d];
+      if (!deptData) return;
+      
+      sums.tnh.num += deptData.tnh.num; sums.tnh.denum += deptData.tnh.denum;
+      
+      ['perfRang1', 'hotlineRang1', 'constructionRang1', 'perfRang2'].forEach(proc => {
+         ['groupA', 'groupB', 'groupC'].forEach(grp => {
+            sums[proc][grp].num += deptData[proc][grp].num;
+            sums[proc][grp].denum += deptData[proc][grp].denum;
+         });
+      });
+    });
+
+    const totalDenumRang1 = 
+      sums.perfRang1.groupA.denum + sums.perfRang1.groupB.denum + sums.perfRang1.groupC.denum +
+      sums.hotlineRang1.groupA.denum + sums.hotlineRang1.groupB.denum + sums.hotlineRang1.groupC.denum +
+      sums.constructionRang1.groupA.denum + sums.constructionRang1.groupB.denum + sums.constructionRang1.groupC.denum;
+      
+    const totalDenumRang2 = sums.perfRang2.groupA.denum + sums.perfRang2.groupB.denum + sums.perfRang2.groupC.denum;
+
+    const calc = (n, d) => d > 0 ? (n/d)*100 : 0;
+    const calcPart = (ld, gd) => gd > 0 ? (ld/gd)*100 : 0;
+    const calcBonus = (res, part, conf) => {
+       if (res <= conf.min) return 0;
+       if (res >= conf.max) return 4.0 * (part/100);
+       return (((res - conf.min) / (conf.max - conf.min)) * 4.0) * (part/100);
+    };
+
+    const buildGrp = (raw, totalD, conf) => {
+       const res = calc(raw.num, raw.denum);
+       const part = calcPart(raw.denum, totalD);
+       const bonus = calcBonus(res, part, conf);
+       return { num: raw.num, denum: raw.denum, resultat: Number(res.toFixed(2)), partDeMarche: Number(part.toFixed(2)), bonus: Number(bonus.toFixed(2)) };
+    };
+
+    return {
+      tnh: { num: sums.tnh.num, denum: sums.tnh.denum, resultat: Number(calc(sums.tnh.num, sums.tnh.denum).toFixed(2)) },
+      perfRang1: {
+        groupA: buildGrp(sums.perfRang1.groupA, totalDenumRang1, bonusConfig.plp.a),
+        groupB: buildGrp(sums.perfRang1.groupB, totalDenumRang1, bonusConfig.plp.b),
+        groupC: buildGrp(sums.perfRang1.groupC, totalDenumRang1, bonusConfig.plp.c)
+      },
+      hotlineRang1: {
+        groupA: buildGrp(sums.hotlineRang1.groupA, totalDenumRang1, bonusConfig.hotline.a),
+        groupB: buildGrp(sums.hotlineRang1.groupB, totalDenumRang1, bonusConfig.hotline.b),
+        groupC: buildGrp(sums.hotlineRang1.groupC, totalDenumRang1, bonusConfig.hotline.c)
+      },
+      constructionRang1: {
+        groupA: buildGrp(sums.constructionRang1.groupA, totalDenumRang1, bonusConfig.construction.a),
+        groupB: buildGrp(sums.constructionRang1.groupB, totalDenumRang1, bonusConfig.construction.b),
+        groupC: buildGrp(sums.constructionRang1.groupC, totalDenumRang1, bonusConfig.construction.c)
+      },
+      perfRang2: {
+        groupA: buildGrp(sums.perfRang2.groupA, totalDenumRang2, bonusConfig.rang2.a),
+        groupB: buildGrp(sums.perfRang2.groupB, totalDenumRang2, bonusConfig.rang2.b),
+        groupC: buildGrp(sums.perfRang2.groupC, totalDenumRang2, bonusConfig.rang2.c)
+      }
+    };
+  };
+
+  const getComboData = () => {
+    const amiiRaw = aggregateRawData(fichier1Cache['ZMD_AMII']);
+    const ripRaw = aggregateRawData(fichier1Cache['ZMD_RIP']);
+    const ztdRaw = aggregateRawData(fichier1Cache['ZTD']);
+
+    const isComboUnlocked = !!(amiiRaw && ripRaw && ztdRaw);
 
     const compute = (raw, key) => {
         if (!raw) return null;
@@ -122,12 +228,13 @@ export default function UnifiedUploader() {
             return { ...raw, partDeMarche: 0, bonus: null, isComboUnlocked: false };
         }
         
-        const totalDenum = amii.denum + rip.denum + ztd.denum;
+        const totalDenum = amiiRaw.denum + ripRaw.denum + ztdRaw.denum;
         const pdm = totalDenum > 0 ? (raw.denum / totalDenum) * 100 : 0;
         const earnedBonus = computeBonus(raw.resultat, bonusConfig[key], pdm);
 
         return { 
           ...raw, 
+          resultat: Number(raw.resultat.toFixed(2)),
           partDeMarche: Number(pdm.toFixed(2)), 
           bonus: Number(earnedBonus.toFixed(2)), 
           isComboUnlocked: true 
@@ -135,9 +242,9 @@ export default function UnifiedUploader() {
     };
 
     return {
-        ZMD_AMII: compute(amii, 'zmdAmii'),
-        ZMD_RIP: compute(rip, 'zmdRip'),
-        ZTD: compute(ztd, 'ztd')
+        ZMD_AMII: compute(amiiRaw, 'zmdAmii'),
+        ZMD_RIP: compute(ripRaw, 'zmdRip'),
+        ZTD: compute(ztdRaw, 'ztd')
     };
   };
 
@@ -145,18 +252,32 @@ export default function UnifiedUploader() {
 
   const getCurrentResult = () => {
     if (!activeModule) return null;
+    
     if (isFichier3Group) {
         const d = comboData[activeModule];
-        if (d) return { title: `Rapport : ${modules[activeModule].label}`, data: d };
+        if (d) {
+            const depts = fichier1Cache[activeModule]?.departments || [];
+            return { title: `Rapport : ${modules[activeModule].label}`, data: d, departments: depts };
+        }
         return null;
     }
-    if (isIsolatedUpload && fichier1Cache[activeModule]) return fichier1Cache[activeModule];
+    
+    if (isIsolatedUpload && fichier1Cache[activeModule]) {
+      const cache = fichier1Cache[activeModule];
+      const aggregated = aggregateIsolated(cache, activeModule);
+      if (aggregated) return { title: cache.title, data: aggregated, departments: cache.departments };
+      return null;
+    }
+    
     if (isFichier2Group && fichier2Data) {
-      if (activeModule === "TNH" && fichier2Data.tnh) return { title: "Rapport : TNH (CR Delai)", data: fichier2Data.tnh };
-      if (activeModule === "PERF_RANG_1" && fichier2Data.perfRang1) return { title: "Rapport : PERF RANG 1 (PLP)", data: fichier2Data.perfRang1 };
-      if (activeModule === "HOTLINE_RANG_1" && fichier2Data.hotlineRang1) return { title: "Rapport : PERF RANG 1 (HOTLINE)", data: fichier2Data.hotlineRang1 };
-      if (activeModule === "CONSTRUCTION_RANG_1" && fichier2Data.constructionRang1) return { title: "Rapport : PERF RANG 1 (CONSTRUCT)", data: fichier2Data.constructionRang1 };
-      if (activeModule === "PERF_RANG_2" && fichier2Data.perfRang2) return { title: "Rapport : PERF RANG 2 (TOUS PROCESS)", data: fichier2Data.perfRang2 };
+      const d = aggregateFichier2(fichier2Data);
+      if (!d) return null;
+
+      if (activeModule === "TNH" && d.tnh) return { title: "Rapport : TNH (CR Delai)", data: d.tnh, departments: fichier2Data.departments };
+      if (activeModule === "PERF_RANG_1" && d.perfRang1) return { title: "Rapport : PERF RANG 1 (PLP)", data: d.perfRang1, departments: fichier2Data.departments };
+      if (activeModule === "HOTLINE_RANG_1" && d.hotlineRang1) return { title: "Rapport : PERF RANG 1 (HOTLINE)", data: d.hotlineRang1, departments: fichier2Data.departments };
+      if (activeModule === "CONSTRUCTION_RANG_1" && d.constructionRang1) return { title: "Rapport : PERF RANG 1 (CONSTRUCT)", data: d.constructionRang1, departments: fichier2Data.departments };
+      if (activeModule === "PERF_RANG_2" && d.perfRang2) return { title: "Rapport : PERF RANG 2 (TOUS PROCESS)", data: d.perfRang2, departments: fichier2Data.departments };
     }
     return null;
   };
@@ -164,7 +285,7 @@ export default function UnifiedUploader() {
   const currentResult = getCurrentResult();
 
   const handleTabChange = (moduleId) => {
-    setActiveModule(moduleId); setFileToUpload(null); setError("");
+    setActiveModule(moduleId); setFileToUpload(null); setError(""); setSuccessMsg("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -183,6 +304,78 @@ export default function UnifiedUploader() {
       ...prev,
       [process]: { ...prev[process], [key]: parseFloat(value) || 0 }
     }));
+  };
+
+  const handleFetchHistory = async () => {
+    setLoading(true); setError(""); setSuccessMsg("");
+    setFichier1Cache({}); setFichier2Data(null); setSelectedDepts(["GLOBAL"]);
+
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7623';
+      const res = await fetch(`${baseUrl}/api/v1/export/kpi?month=${selectedMonth}&year=${selectedYear}`);
+      
+      if (!res.ok) throw new Error("Erreur lors de la récupération de l'historique.");
+      
+      const dbData = await res.json();
+      
+      if (!dbData || dbData.length === 0) {
+        setError(`Aucune donnée trouvée dans la base de données pour ${selectedMonth}/${selectedYear}.`);
+        setLoading(false); return;
+      }
+
+      const newF1 = {};
+      const newF2 = { departments: new Set(), data: {} };
+
+      dbData.forEach(row => {
+        const { processus, departement, num, denum, resultat, partDeMarche, bonus } = row;
+        const rowData = { num, denum, resultat, partDeMarche, bonus };
+
+        if (["TNH", "PERF_RANG_1_A", "PERF_RANG_1_B", "PERF_RANG_1_C", "HOTLINE_RANG_1_A", "HOTLINE_RANG_1_B", "HOTLINE_RANG_1_C", "CONSTRUCTION_RANG_1_A", "CONSTRUCTION_RANG_1_B", "CONSTRUCTION_RANG_1_C", "PERF_RANG_2_A", "PERF_RANG_2_B", "PERF_RANG_2_C"].includes(processus)) {
+          if (!newF2.data[departement]) {
+            newF2.data[departement] = {
+              tnh: null,
+              perfRang1: { groupA: {}, groupB: {}, groupC: {} },
+              hotlineRang1: { groupA: {}, groupB: {}, groupC: {} },
+              constructionRang1: { groupA: {}, groupB: {}, groupC: {} },
+              perfRang2: { groupA: {}, groupB: {}, groupC: {} }
+            };
+            newF2.departments.add(departement);
+          }
+          const f2Dept = newF2.data[departement];
+
+          if (processus === 'TNH') f2Dept.tnh = rowData;
+          else if (processus === 'PERF_RANG_1_A') f2Dept.perfRang1.groupA = rowData;
+          else if (processus === 'PERF_RANG_1_B') f2Dept.perfRang1.groupB = rowData;
+          else if (processus === 'PERF_RANG_1_C') f2Dept.perfRang1.groupC = rowData;
+          else if (processus === 'HOTLINE_RANG_1_A') f2Dept.hotlineRang1.groupA = rowData;
+          else if (processus === 'HOTLINE_RANG_1_B') f2Dept.hotlineRang1.groupB = rowData;
+          else if (processus === 'HOTLINE_RANG_1_C') f2Dept.hotlineRang1.groupC = rowData;
+          else if (processus === 'CONSTRUCTION_RANG_1_A') f2Dept.constructionRang1.groupA = rowData;
+          else if (processus === 'CONSTRUCTION_RANG_1_B') f2Dept.constructionRang1.groupB = rowData;
+          else if (processus === 'CONSTRUCTION_RANG_1_C') f2Dept.constructionRang1.groupC = rowData;
+          else if (processus === 'PERF_RANG_2_A') f2Dept.perfRang2.groupA = rowData;
+          else if (processus === 'PERF_RANG_2_B') f2Dept.perfRang2.groupB = rowData;
+          else if (processus === 'PERF_RANG_2_C') f2Dept.perfRang2.groupC = rowData;
+        } else {
+          if (!newF1[processus]) {
+            newF1[processus] = { title: `Rapport : ${modules[processus]?.label || processus}`, departments: new Set(), data: {} };
+          }
+          newF1[processus].departments.add(departement);
+          newF1[processus].data[departement] = rowData;
+        }
+      });
+
+      Object.keys(newF1).forEach(proc => {
+        newF1[proc].departments = Array.from(newF1[proc].departments).sort((a,b) => a==='GLOBAL'?-1:b==='GLOBAL'?1:a.localeCompare(b));
+      });
+      newF2.departments = Array.from(newF2.departments).sort((a,b) => a==='GLOBAL'?-1:b==='GLOBAL'?1:a.localeCompare(b));
+
+      setFichier1Cache(newF1);
+      if (newF2.departments.length > 0) setFichier2Data(newF2);
+      
+      setSuccessMsg(`Historique chargé avec succès pour ${selectedMonth}/${selectedYear} !`);
+    } catch (err) { setError(err.message); } 
+    finally { setLoading(false); }
   };
 
   useEffect(() => {
@@ -205,10 +398,10 @@ export default function UnifiedUploader() {
   const handleDragLeave = (e) => { e.preventDefault(); setIsDragging(false); };
   const handleDrop = (e) => {
     e.preventDefault(); setIsDragging(false); setIsGlobalDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) { setFileToUpload(e.dataTransfer.files[0]); setError(""); }
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) { setFileToUpload(e.dataTransfer.files[0]); setError(""); setSuccessMsg(""); }
   };
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) { setFileToUpload(e.target.files[0]); setError(""); }
+    if (e.target.files && e.target.files[0]) { setFileToUpload(e.target.files[0]); setError(""); setSuccessMsg(""); }
   };
   const removeFileToUpload = () => { setFileToUpload(null); if (fileInputRef.current) fileInputRef.current.value = ""; };
 
@@ -218,20 +411,18 @@ export default function UnifiedUploader() {
     } else {
       setFichier2Data(null); 
     }
-    setFileToUpload(null);
+    setFileToUpload(null); setSuccessMsg(""); setSelectedDepts(["GLOBAL"]);
   };
 
   const handleAnalyze = async () => {
     if (!fileToUpload || !activeModule) return setError("Veuillez injecter un fichier d'abord.");
-    setLoading(true); setError("");
+    setLoading(true); setError(""); setSuccessMsg("");
     
     let endpoint = isIsolatedUpload ? API_ENDPOINTS_ISOLATED[activeModule] : "/api/v1/dashboard/fichier2";
 
     const formData = new FormData(); 
     formData.append('file', fileToUpload);
     formData.append('config', JSON.stringify(bonusConfig)); 
-    
-    // L'FIX HWA HNA: Kan-siftou l'Mois w l'Année f l'API
     formData.append('month', selectedMonth);
     formData.append('year', selectedYear);
 
@@ -248,11 +439,8 @@ export default function UnifiedUploader() {
       
       if (isIsolatedUpload) {
         const title = `Rapport : ${modules[activeModule].label}`;
-        
-        // L'FIX HWA HNA: Kan-gériw l'format jdid dyal SACLI (li fih "details")
         let dataToStore = fullData;
         let depts = [];
-        
         if (fullData.details) {
           dataToStore = fullData.details;
           depts = Object.keys(fullData.details).sort((a, b) => {
@@ -261,18 +449,25 @@ export default function UnifiedUploader() {
             return a.localeCompare(b);
           });
         }
-
-        setFichier1Cache(prev => ({ 
-          ...prev, 
-          [activeModule]: { title, data: dataToStore, departments: depts } 
-        }));
-        setSelectedDept("GLOBAL"); // Reset l'dropdown mli kayt-uploada fichier jdid
-
+        setFichier1Cache(prev => ({ ...prev, [activeModule]: { title, data: dataToStore, departments: depts } }));
+        setSelectedDepts(["GLOBAL"]);
       } else {
-        setFichier2Data(fullData);
+        let dataToStore = fullData;
+        let depts = [];
+        if (fullData.details) {
+            dataToStore = fullData.details;
+            depts = Object.keys(fullData.details).sort((a, b) => {
+                if (a === "GLOBAL") return -1;
+                if (b === "GLOBAL") return 1;
+                return a.localeCompare(b);
+            });
+        }
+        setFichier2Data({ data: dataToStore, departments: depts });
+        setSelectedDepts(["GLOBAL"]);
       }
       
       setFileToUpload(null); 
+      setSuccessMsg(`Fichier analysé et sauvegardé avec succès pour ${selectedMonth}/${selectedYear}.`);
     } catch (err) { setError(`Échec : ${err.message}`); } 
     finally { setLoading(false); }
   };
@@ -291,21 +486,19 @@ export default function UnifiedUploader() {
       let dataToDisplay = null;
       if (["SACLI_OK", "SARCLI_NOK", "GEM_NOK", "TAUX_20J", "SAV_PERF", "SAV_DELAI", "SECURISATION", "CCR", "SATCLI_SAV"].includes(mod.id)) {
         if (fichier1Cache[mod.id]) {
-          // Ila kan fih details (b7al SACLI), n-affichiw l'GLOBAL f l'Vue Globale
-          dataToDisplay = fichier1Cache[mod.id].departments ? fichier1Cache[mod.id].data["GLOBAL"] : fichier1Cache[mod.id].data;
+          dataToDisplay = fichier1Cache[mod.id].departments ? aggregateIsolated(fichier1Cache[mod.id], mod.id) : fichier1Cache[mod.id].data;
         }
       } else if (["ZMD_AMII", "ZMD_RIP", "ZTD"].includes(mod.id)) {
         dataToDisplay = comboData[mod.id];
-      } else if (mod.id === "TNH") {
-        dataToDisplay = fichier2Data?.tnh;
-      } else if (mod.id === "PERF_RANG_1") {
-        dataToDisplay = extractMultiTotal(fichier2Data?.perfRang1);
-      } else if (mod.id === "HOTLINE_RANG_1") {
-        dataToDisplay = extractMultiTotal(fichier2Data?.hotlineRang1);
-      } else if (mod.id === "CONSTRUCTION_RANG_1") {
-        dataToDisplay = extractMultiTotal(fichier2Data?.constructionRang1);
-      } else if (mod.id === "PERF_RANG_2") {
-        dataToDisplay = extractMultiTotal(fichier2Data?.perfRang2);
+      } else if (fichier2Data) {
+        const d = aggregateFichier2(fichier2Data);
+        if (d) {
+          if (mod.id === "TNH") dataToDisplay = d.tnh;
+          else if (mod.id === "PERF_RANG_1") dataToDisplay = extractMultiTotal(d.perfRang1);
+          else if (mod.id === "HOTLINE_RANG_1") dataToDisplay = extractMultiTotal(d.hotlineRang1);
+          else if (mod.id === "CONSTRUCTION_RANG_1") dataToDisplay = extractMultiTotal(d.constructionRang1);
+          else if (mod.id === "PERF_RANG_2") dataToDisplay = extractMultiTotal(d.perfRang2);
+        }
       }
       return { ...mod, data: dataToDisplay };
     });
@@ -332,12 +525,10 @@ export default function UnifiedUploader() {
     const res = currentResult;
     if (!res) return null;
 
-    // L'FIX HWA HNA: Ila kan l'format jdid dyal SACLI (fih departments)
-    if (res.departments && res.data[selectedDept]) {
-      return res.data[selectedDept];
+    if (res.departments && res.data) {
+      return res.data;
     }
 
-    // L'format l9dim
     const raw = res.data;
     if (!isMultiGroup) return raw; 
     return {
@@ -353,6 +544,22 @@ export default function UnifiedUploader() {
 
   const pdmValueDisplay = isFichier3Group && uiData && !uiData.isComboUnlocked ? "🔒" : `${Number(uiData?.partDeMarche || 0).toFixed(2)}%`;
   const bonusValueDisplay = isFichier3Group && uiData && !uiData.isComboUnlocked ? "🔒" : `+${Number(uiData?.bonus || 0).toFixed(2)}%`;
+
+  // L'FIX HWA HNA: Fonction bach n-gériw l'Multi-Select
+  const toggleDept = (dept) => {
+    if (dept === "GLOBAL") {
+      setSelectedDepts(["GLOBAL"]);
+    } else {
+      let newDepts = selectedDepts.filter(d => d !== "GLOBAL");
+      if (newDepts.includes(dept)) {
+        newDepts = newDepts.filter(d => d !== dept);
+      } else {
+        newDepts.push(dept);
+      }
+      if (newDepts.length === 0) newDepts = ["GLOBAL"];
+      setSelectedDepts(newDepts);
+    }
+  };
 
   return (
     <>
@@ -404,6 +611,23 @@ export default function UnifiedUploader() {
           padding: 15px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px;
           color: #b45309; box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.1);
         }
+
+        .fetchBtn {
+          background: #10b981; color: white; border: none; padding: 12px 20px; border-radius: 12px;
+          font-weight: 700; font-size: 1rem; cursor: pointer; transition: all 0.2s ease;
+          display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+        }
+        .fetchBtn:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3); }
+        .fetchBtn:active { transform: translateY(0); }
+
+        /* L'FIX HWA HNA: Multi-Select CSS */
+        .multiSelectContainer { position: relative; flex: 1; }
+        .multiSelectHeader { background: #FFFFFF; border: 1px solid #93C5FD; padding: 12px 15px; border-radius: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 700; color: #1E3A8A; transition: all 0.2s ease; }
+        .multiSelectHeader:hover { border-color: #3B82F6; }
+        .multiSelectDropdown { position: absolute; top: 110%; left: 0; width: 100%; background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 100; max-height: 250px; overflow-y: auto; padding: 10px; animation: slideDown 0.2s ease-out; }
+        .multiSelectOption { display: flex; align-items: center; gap: 12px; padding: 10px; cursor: pointer; border-radius: 8px; transition: background 0.2s; color: #1e293b; font-weight: 600; }
+        .multiSelectOption:hover { background: #f1f5f9; }
+        .multiSelectOption input { width: 18px; height: 18px; cursor: pointer; accent-color: #3b82f6; }
       `}} />
 
       <button className="fabGlobalBtn" onClick={() => setShowGlobalModal(true)}>
@@ -449,6 +673,40 @@ export default function UnifiedUploader() {
               <p className={styles.subtitle}>Intelligence Qualité & Traitement de Données</p>
             </div>
 
+            <div className={styles.timeSelector} style={{ background: 'rgba(255,255,255,0.5)', padding: '15px', borderRadius: '16px', border: '1px solid rgba(226, 232, 240, 0.8)' }}>
+              <div className={styles.timeGroup}>
+                <label>Mois de Traitement</label>
+                <select className={styles.timeSelect} value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)}>
+                  {[1,2,3,4,5,6,7,8,9,10,11,12].map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+              <div className={styles.timeGroup}>
+                <label>Année</label>
+                <select className={styles.timeSelect} value={selectedYear} onChange={e => setSelectedYear(e.target.value)}>
+                  {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </div>
+              <div className={styles.timeGroup} style={{ justifyContent: 'flex-end' }}>
+                <button className="fetchBtn" onClick={handleFetchHistory} disabled={loading}>
+                  {loading ? <span className={styles.spinner} style={{ width: '16px', height: '16px' }}></span> : <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>}
+                  Charger l'historique
+                </button>
+              </div>
+            </div>
+
+            {successMsg && (
+              <div style={{ background: '#ecfdf5', color: '#059669', padding: '12px 20px', borderRadius: '12px', border: '1px solid #a7f3d0', marginBottom: '20px', fontWeight: '600', textAlign: 'center' }}>
+                {successMsg}
+              </div>
+            )}
+            
+            {error && (
+              <div className={styles.errorAlert} style={{ marginTop: '20px' }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <span>{error}</span>
+              </div>
+            )}
+
             <div className={styles.moduleSelectorWrapper} style={{ display: 'block' }}>
               <div className="categorySection">
                 <div className="categoryLabel">CATÉGORIE RACC</div>
@@ -456,6 +714,7 @@ export default function UnifiedUploader() {
                   {Object.values(modules).filter(mod => mod.category === 'RACC').map((mod) => (
                     <button key={mod.id} onClick={() => handleTabChange(mod.id)} className={`${styles.tabBtn} ${activeModule === mod.id ? styles.activeTab : ''}`}>
                       <span className={styles.tabIcon}>{mod.icon}</span> {mod.label}
+                      {((isIsolatedUpload || isFichier3Group) ? fichier1Cache[mod.id] : fichier2Data) && <span style={{ width: '8px', height: '8px', background: '#10b981', borderRadius: '50%', marginLeft: '5px' }}></span>}
                     </button>
                   ))}
                 </div>
@@ -467,41 +726,17 @@ export default function UnifiedUploader() {
                   {Object.values(modules).filter(mod => mod.category === 'SAV').map((mod) => (
                     <button key={mod.id} onClick={() => handleTabChange(mod.id)} className={`${styles.tabBtn} ${activeModule === mod.id ? styles.activeTab : ''}`}>
                       <span className={styles.tabIcon}>{mod.icon}</span> {mod.label}
+                      {((isIsolatedUpload || isFichier3Group) ? fichier1Cache[mod.id] : fichier2Data) && <span style={{ width: '8px', height: '8px', background: '#10b981', borderRadius: '50%', marginLeft: '5px' }}></span>}
                     </button>
                   ))}
                 </div>
               </div>
             </div>
-            
-            {error && (
-              <div className={styles.errorAlert} style={{ marginTop: '20px' }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                <span>{error}</span>
-              </div>
-            )}
 
             <div className={styles.contentGrid}>
               
               {!currentResult && (
                 <div className={styles.uploadSection}>
-                  
-                  {/* L'FIX HWA HNA: Zedt les sélecteurs dyal Mois w Année */}
-                  {activeModule && (
-                    <div className={styles.timeSelector}>
-                      <div className={styles.timeGroup}>
-                        <label>Mois de Traitement</label>
-                        <select className={styles.timeSelect} value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)}>
-                          {[1,2,3,4,5,6,7,8,9,10,11,12].map(m => <option key={m} value={m}>{m}</option>)}
-                        </select>
-                      </div>
-                      <div className={styles.timeGroup}>
-                        <label>Année</label>
-                        <select className={styles.timeSelect} value={selectedYear} onChange={e => setSelectedYear(e.target.value)}>
-                          {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
-                        </select>
-                      </div>
-                    </div>
-                  )}
 
                   {showConfigButton && (
                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '15px' }}>
@@ -668,15 +903,44 @@ export default function UnifiedUploader() {
                     </button>
                   </div>
 
-                  {/* L'FIX HWA HNA: Zedt l'Dropdown dyal l'Département */}
+                  {/* L'FIX HWA HNA: Multi-Select Dropdown Custom */}
                   {currentResult.departments && currentResult.departments.length > 0 && (
-                    <div className={styles.deptSelector}>
-                      <label>Filtrer par Département :</label>
-                      <select className={styles.deptSelect} value={selectedDept} onChange={e => setSelectedDept(e.target.value)}>
-                        {currentResult.departments.map(d => (
-                          <option key={d} value={d}>{d === "GLOBAL" ? "Vue Globale (Tous les départements)" : `Département ${d}`}</option>
-                        ))}
-                      </select>
+                    <div className={styles.deptSelector} style={{ position: 'relative', overflow: 'visible' }}>
+                      <label>Filtrer par Département(s) :</label>
+                      <div className="multiSelectContainer">
+                        <div className="multiSelectHeader" onClick={() => setIsDeptDropdownOpen(!isDeptDropdownOpen)}>
+                          <span>
+                            {selectedDepts.includes("GLOBAL") 
+                              ? "Vue Globale (Tous)" 
+                              : `${selectedDepts.length} département(s) sélectionné(s)`}
+                          </span>
+                          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: isDeptDropdownOpen ? 'rotate(180deg)' : 'none', transition: '0.2s' }}><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                        
+                        {isDeptDropdownOpen && (
+                          <div className="multiSelectDropdown">
+                            <label className="multiSelectOption" style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', marginBottom: '8px' }}>
+                              <input 
+                                type="checkbox" 
+                                checked={selectedDepts.includes("GLOBAL")}
+                                onChange={() => toggleDept("GLOBAL")}
+                              />
+                              <span style={{ color: '#1D4ED8', fontWeight: '800' }}>Vue Globale (Tous)</span>
+                            </label>
+                            
+                            {currentResult.departments.filter(d => d !== "GLOBAL").map(d => (
+                              <label key={d} className="multiSelectOption">
+                                <input 
+                                  type="checkbox" 
+                                  checked={selectedDepts.includes(d)}
+                                  onChange={() => toggleDept(d)}
+                                />
+                                <span>Département {d}</span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                   
