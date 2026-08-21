@@ -29,9 +29,15 @@ public class GemNokService {
 
     private final KpiArchiveRepository kpiArchiveRepository;
 
+    // L'FIX: Class sghira bach ntfadaw l'mochkil dyal l'array li kay9leb num m3a denum
+    private static class GemStats {
+        long num = 0;
+        long denum = 0;
+    }
+
     public GemNokResultDto processGemNokExcel(MultipartFile file, String configJson, int month, int year) {
-        Map<String, long[]> statsMap = new HashMap<>();
-        statsMap.put("GLOBAL", new long[]{0, 0});
+        Map<String, GemStats> statsMap = new HashMap<>();
+        statsMap.put("GLOBAL", new GemStats());
 
         BonusConfigDto.SingleConfig config = parseGemNokConfig(configJson);
 
@@ -39,6 +45,8 @@ public class GemNokService {
                 .setDelimiter(';')
                 .setHeader()
                 .setSkipHeaderRecord(true)
+                .setIgnoreHeaderCase(true)
+                .setTrim(true)
                 .build();
 
         try (BufferedReader br = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
@@ -50,34 +58,44 @@ public class GemNokService {
 
             for (String header : headerMap.keySet()) {
                 String cleanHeader = header.trim().toLowerCase();
-                if (cleanHeader.contains("tx gem nok") || cleanHeader.contains("gem nok")) targetCol = header;
-                if (cleanHeader.contains("code dep") || cleanHeader.contains("departement") || cleanHeader.contains("dpt")) actualDeptCol = header;
+                if (cleanHeader.contains("tx gem nok") || cleanHeader.contains("gem nok")) {
+                    targetCol = header;
+                }
+                if (cleanHeader.contains("code dep") || cleanHeader.contains("departement") || cleanHeader.contains("dpt")) {
+                    actualDeptCol = header;
+                }
             }
 
             if (targetCol == null) throw new RuntimeException("Mala9inach l'colonne TX GEM NOK");
 
             for (CSVRecord record : parser) {
-                String rawVal = record.get(targetCol);
-                // L'FIX HWA HNA: Kan-redouha lowerCase bach n-testiw 3la vrai/faux bshoula
-                String val = rawVal != null ? rawVal.trim().toLowerCase() : "";
+                if (record.isMapped(targetCol)) {
+                    String rawVal = record.get(targetCol);
+                    String val = rawVal != null ? rawVal.trim().toLowerCase() : "";
 
-                String dept = "INCONNU";
-                if (actualDeptCol != null && record.isMapped(actualDeptCol)) {
-                    String rawDept = record.get(actualDeptCol);
-                    dept = rawDept != null && !rawDept.trim().isEmpty() ? rawDept.trim() : "INCONNU";
-                }
+                    String dept = "INCONNU";
+                    if (actualDeptCol != null && record.isMapped(actualDeptCol)) {
+                        String rawDept = record.get(actualDeptCol);
+                        dept = rawDept != null && !rawDept.trim().isEmpty() ? rawDept.trim() : "INCONNU";
+                    }
 
-                // L'FIX HWA HNA: Zidna VRAI/TRUE w FAUX/FALSE 7it Excel kay-formatihom booleans
-                boolean is1 = val.equals("1") || val.equals("1.0") || val.equals("1,0") || val.equals("vrai") || val.equals("true");
-                boolean is0 = val.equals("0") || val.equals("0.0") || val.equals("0,0") || val.equals("faux") || val.equals("false");
+                    // L'FIX: Filtre s7i7 100% l ga3 les formats dyal Excel
+                    boolean is1 = val.equals("1") || val.startsWith("1.") || val.startsWith("1,") || val.equals("vrai") || val.equals("true");
+                    boolean is0 = val.equals("0") || val.startsWith("0.") || val.startsWith("0,") || val.equals("faux") || val.equals("false");
 
-                if (is1 || is0) {
-                    statsMap.get("GLOBAL")[1]++; // DENUM = 0 wla 1
-                    if (is1) statsMap.get("GLOBAL")[0]++; // NUM = 1
+                    if (is1 || is0) {
+                        statsMap.putIfAbsent(dept, new GemStats());
 
-                    statsMap.putIfAbsent(dept, new long[]{0, 0});
-                    statsMap.get(dept)[1]++;
-                    if (is1) statsMap.get(dept)[0]++;
+                        // DENUM: Kayakhod total dyal les lignes li fihom 1 wla 0
+                        statsMap.get("GLOBAL").denum++;
+                        statsMap.get(dept).denum++;
+
+                        // NUM: Kayakhod GHIIR les lignes li fihom 1
+                        if (is1) {
+                            statsMap.get("GLOBAL").num++;
+                            statsMap.get(dept).num++;
+                        }
+                    }
                 }
             }
         } catch (Exception e) {
@@ -90,10 +108,10 @@ public class GemNokService {
         Map<String, GemNokGroupDto> finalDetails = new HashMap<>();
         List<KpiArchive> archivesToSave = new ArrayList<>();
 
-        for (Map.Entry<String, long[]> entry : statsMap.entrySet()) {
+        for (Map.Entry<String, GemStats> entry : statsMap.entrySet()) {
             String dept = entry.getKey();
-            long num = entry.getValue()[0];
-            long denum = entry.getValue()[1];
+            long num = entry.getValue().num;
+            long denum = entry.getValue().denum;
 
             double resultat = denum > 0 ? Math.round((((double) num / denum) * 100) * 100.0) / 100.0 : 0.0;
             double bonus = calcInverseBonus(resultat, config.getMin(), config.getMax(), config.getBonusMax());
