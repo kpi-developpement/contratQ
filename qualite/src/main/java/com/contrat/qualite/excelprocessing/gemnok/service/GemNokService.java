@@ -58,7 +58,8 @@ public class GemNokService {
 
             for (CSVRecord record : parser) {
                 String rawVal = record.get(targetCol);
-                String val = rawVal != null ? rawVal.trim() : "";
+                // L'FIX HWA HNA: Kan-redouha lowerCase bach n-testiw 3la vrai/faux bshoula
+                String val = rawVal != null ? rawVal.trim().toLowerCase() : "";
 
                 String dept = "INCONNU";
                 if (actualDeptCol != null && record.isMapped(actualDeptCol)) {
@@ -66,12 +67,13 @@ public class GemNokService {
                     dept = rawDept != null && !rawDept.trim().isEmpty() ? rawDept.trim() : "INCONNU";
                 }
 
-                boolean is1 = val.equals("1") || val.equals("1.0") || val.equals("1,0");
-                boolean is0 = val.equals("0") || val.equals("0.0") || val.equals("0,0");
+                // L'FIX HWA HNA: Zidna VRAI/TRUE w FAUX/FALSE 7it Excel kay-formatihom booleans
+                boolean is1 = val.equals("1") || val.equals("1.0") || val.equals("1,0") || val.equals("vrai") || val.equals("true");
+                boolean is0 = val.equals("0") || val.equals("0.0") || val.equals("0,0") || val.equals("faux") || val.equals("false");
 
                 if (is1 || is0) {
-                    statsMap.get("GLOBAL")[1]++;
-                    if (is1) statsMap.get("GLOBAL")[0]++;
+                    statsMap.get("GLOBAL")[1]++; // DENUM = 0 wla 1
+                    if (is1) statsMap.get("GLOBAL")[0]++; // NUM = 1
 
                     statsMap.putIfAbsent(dept, new long[]{0, 0});
                     statsMap.get(dept)[1]++;
